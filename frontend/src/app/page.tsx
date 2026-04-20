@@ -3,12 +3,12 @@ import Link from "next/link";
 export default function HomePage() {
   const stats = [{ value: "2,400+", label: "Students Enrolled" },{ value: "48", label: "Expert Courses" },{ value: "96%", label: "Completion Rate" },{ value: "100%", label: "Job-Ready Skills" }];
   const courses = [
-    { title: "Cybersecurity Fundamentals", category: "Security", level: "Beginner", price: 75000, duration: "8 weeks", icon: "🔐" },
+    { title: "GIS and Remote Sensing Fundamentals", category: "Geographic Information Systems", level: "Beginner", price: 75000, duration: "8 weeks", icon: "🔐" },
     { title: "Data Analysis with Python", category: "Data Science", level: "Intermediate", price: 85000, duration: "10 weeks", icon: "📊" },
-    { title: "Cloud Architecture (AWS)", category: "Cloud", level: "Advanced", price: 120000, duration: "12 weeks", icon: "☁️" },
-    { title: "Full-Stack Web Development", category: "Development", level: "Intermediate", price: 95000, duration: "16 weeks", icon: "💻" },
-    { title: "UI/UX Design Mastery", category: "Design", level: "Beginner", price: 65000, duration: "8 weeks", icon: "🎨" },
-    { title: "Network Administration", category: "Networking", level: "Intermediate", price: 80000, duration: "10 weeks", icon: "🌐" },
+    { title: "ArcGIS Software Training", category: "Spatial Analysis", level: "Advanced", price: 120000, duration: "12 weeks", icon: "☁️" },
+    { title: "Surveying Fundamentals", category: "Surveying", level: "Intermediate", price: 95000, duration: "16 weeks", icon: "💻" },
+    { title: "Spatial Analysis Techniques", category: "AutoCad", level: "Beginner", price: 65000, duration: "8 weeks", icon: "🎨" },
+    { title: "Spatial Data Management", category: "Mapping", level: "Intermediate", price: 80000, duration: "10 weeks", icon: "🌐" },
   ];
   return (
     <div className="bg-[#03091A] text-white min-h-screen">
@@ -35,13 +35,13 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-6 md:px-12 py-24 w-full">
           <div className="max-w-4xl">
             <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-semibold px-4 py-2 rounded-full mb-8 tracking-wide uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" /> Nigeria&apos;s Premier Tech Academy
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" /> Nigeria&apos;s Premier GIS Academy
             </div>
             <h1 className="text-5xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6">
               Learn Skills That<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500">Actually Matter</span>
             </h1>
-            <p className="text-lg text-white/50 max-w-2xl leading-relaxed mb-10">Industry-focused technology training designed for the future. From cybersecurity to cloud computing — we build careers, not just credentials.</p>
+            <p className="text-lg text-white/50 max-w-2xl leading-relaxed mb-10">Industry-focused technology training designed for the future. From Spatial Analysis to Geospatial Computing, we build careers, not just credentials.</p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/public/courses" className="group inline-flex items-center gap-3 bg-brand-500 hover:bg-brand-600 px-8 py-4 rounded-2xl font-bold text-base transition-all shadow-lg shadow-brand-900/50">
                 Explore Courses <span className="group-hover:translate-x-1 transition-transform">→</span>

@@ -49,7 +49,7 @@ export default function AdminDashboard() {
         <table className="w-full text-sm">
           <thead><tr className="text-white/30 text-xs uppercase tracking-wider"><th className="text-left px-5 py-3 font-medium">Student</th><th className="text-left px-5 py-3 font-medium">Course</th><th className="text-left px-5 py-3 font-medium">Mode</th><th className="text-left px-5 py-3 font-medium">Amount</th><th className="text-left px-5 py-3 font-medium">Status</th></tr></thead>
           <tbody>
-            {[{name:"Emeka Nwosu",course:"Cybersecurity",mode:"Online",amount:"₦75,000",status:"Active"},{name:"Fatima Bello",course:"Data Analysis",mode:"Physical",amount:"₦85,000",status:"Pending"},{name:"Chukwudi Eze",course:"Web Dev",mode:"Online",amount:"₦95,000",status:"Active"},{name:"Ngozi Adeleke",course:"Cloud AWS",mode:"Private",amount:"₦120,000",status:"Active"}].map((row,i)=>(
+            {[{name:"Emeka Nwosu",course:"GIS",mode:"Online",amount:"₦75,000",status:"Active"},{name:"Fatima Bello",course:"Data Analysis",mode:"Physical",amount:"₦85,000",status:"Pending"},{name:"Chukwudi Eze",course:"Remote Sensing",mode:"Online",amount:"₦95,000",status:"Active"},{name:"Ngozi Adeleke",course:"Surveying",mode:"Private",amount:"₦120,000",status:"Active"}].map((row,i)=>(
               <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                 <td className="px-5 py-4 text-white font-medium">{row.name}</td>
                 <td className="px-5 py-4 text-white/50">{row.course}</td>

@@ -1,6 +1,6 @@
 "use client";
 interface Props { filters: Record<string, string>; onChange: (f: Record<string, string>) => void; }
-const categories = ["Security","Data Science","Cloud","Development","Design","Networking","Business"];
+const categories = ["Geographic Information Systems","Data Analysis","Spatial Analysis","Surveying","Mapping","AutoCad","Networking"];
 const modes = ["online","physical","private"];
 const levels = ["beginner","intermediate","advanced"];
 

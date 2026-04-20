@@ -13,7 +13,7 @@ export default function CourseCard({ course }: { course: Course }) {
     <Link href={`/public/courses/${course.id}`} className="group block">
       <div className="bg-[#071428] border border-white/[0.07] hover:border-brand-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/50">
         <div className="h-40 bg-gradient-to-br from-brand-900 to-[#020a16] flex items-center justify-center relative">
-          <span className="text-5xl opacity-40">{course.category === "Security" ? "🔐" : course.category === "Data Science" ? "📊" : course.category === "Cloud" ? "☁️" : course.category === "Design" ? "🎨" : "💻"}</span>
+          <span className="text-5xl opacity-40">{course.category === "Geographic Information Systems" ? "🔐" : course.category === "Data Science" ? "📊" : course.category === "Surveying" ? "☁️" : course.category === "Autocad" ? "🎨" : "💻"}</span>
           <div className="absolute top-3 right-3"><span className={cn("text-[10px] font-semibold px-2 py-1 rounded-full", levelColors[course.level || ""] || "bg-white/10 text-white/50")}>{course.level || "All levels"}</span></div>
           {course.category && <div className="absolute bottom-3 left-3"><span className="text-[10px] text-brand-400 font-semibold uppercase tracking-wider">{course.category}</span></div>}
         </div>

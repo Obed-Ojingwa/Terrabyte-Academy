@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   title: "Terrabyte Academy",
   description: "Nigeria's Premier Technology Learning Platform",
-  keywords: ["LMS", "online learning", "tech courses", "cybersecurity", "data science", "Nigeria"],
+  keywords: ["GIS", "online learning", "tech courses", "Geography", "data science", "Nigeria"],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
