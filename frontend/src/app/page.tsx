@@ -148,9 +148,10 @@ export default function HomePage() {
               className="w-auto h-9 object-contain"
               priority
             />
+            {/* Where initial logo was, now empty */}
             <div className="leading-tight">
-              <div className="font-black text-gray-900 text-sm">TERRA</div>
-              <div className="text-blue-600 font-bold text-[10px] tracking-wider">BYTE</div>
+              <div className="font-black text-gray-900 text-sm"></div>
+              <div className="text-blue-600 font-bold text-[10px] tracking-wider"></div>
             </div>
           </Link>
 
@@ -316,7 +317,7 @@ export default function HomePage() {
                   className="w-auto h-9 object-contain"
                 />
                 <div className="leading-tight">
-                  <div className="font-black text-white text-sm">TERRA</div>
+                  <div className="font-black text-white text-sm"></div>
                   <div className="text-blue-400 font-bold text-[10px] tracking-wider">BYTE</div>
                 </div>
               </Link>
