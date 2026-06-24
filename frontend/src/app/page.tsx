@@ -318,7 +318,7 @@ export default function HomePage() {
                 />
                 <div className="leading-tight">
                   <div className="font-black text-white text-sm"></div>
-                  <div className="text-blue-400 font-bold text-[10px] tracking-wider">BYTE</div>
+                  <div className="text-blue-400 font-bold text-[10px] tracking-wider"></div>
                 </div>
               </Link>
 
