@@ -1,7 +1,16 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from uuid import UUID
 from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+from pydantic import BaseModel, ConfigDict
+
+
+class CourseTutorSummary(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    avatar_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CourseCreate(BaseModel):
@@ -38,10 +47,10 @@ class CourseResponse(BaseModel):
     level: Optional[str]
     duration_weeks: Optional[int]
     is_published: bool
+    tutor: Optional[CourseTutorSummary] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CourseListResponse(BaseModel):

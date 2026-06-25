@@ -1,9 +1,10 @@
 import re
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
 from app.models.course import Course
-from app.schemas.course import CourseCreate, CourseUpdate, CourseResponse, CourseListResponse
+from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
 
 
 def slugify(text: str) -> str:
@@ -17,7 +18,7 @@ class CourseService:
         self.db = db
 
     async def list_courses(self, search, category, mode, level, page, page_size) -> CourseListResponse:
-        query = select(Course).where(Course.is_published == True)
+        query = select(Course).options(joinedload(Course.tutor)).where(Course.is_published == True)
         if search:
             query = query.where(Course.title.ilike(f"%{search}%"))
         if category:
@@ -36,7 +37,7 @@ class CourseService:
         )
 
     async def get_course(self, course_id: str) -> CourseResponse:
-        result = await self.db.execute(select(Course).where(Course.id == course_id))
+        result = await self.db.execute(select(Course).options(joinedload(Course.tutor)).where(Course.id == course_id))
         course = result.scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
@@ -51,10 +52,12 @@ class CourseService:
         self.db.add(course)
         await self.db.commit()
         await self.db.refresh(course)
+        if course.tutor_id:
+            await self.db.refresh(course, attribute_names=["tutor"])
         return CourseResponse.model_validate(course)
 
     async def update_course(self, course_id: str, payload: CourseUpdate, user) -> CourseResponse:
-        result = await self.db.execute(select(Course).where(Course.id == course_id))
+        result = await self.db.execute(select(Course).options(joinedload(Course.tutor)).where(Course.id == course_id))
         course = result.scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
@@ -62,6 +65,8 @@ class CourseService:
             setattr(course, field, value)
         await self.db.commit()
         await self.db.refresh(course)
+        if course.tutor_id:
+            await self.db.refresh(course, attribute_names=["tutor"])
         return CourseResponse.model_validate(course)
 
     async def delete_course(self, course_id: str, user):

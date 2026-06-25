@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
 from app.models.user import User, Role
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
+from app.schemas.auth import RegisterRequest, LoginRequest, RefreshTokenResponse, TokenResponse, UserResponse
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 
 
@@ -46,17 +46,21 @@ class AuthService:
         return TokenResponse(
             access_token=create_access_token(str(user.id), user.role.name),
             refresh_token=create_refresh_token(str(user.id)),
-            user={
-                "id": str(user.id),
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "role": {"name": user.role.name},
-                "avatar_url": user.avatar_url,
-            },
+            user=UserResponse(
+                id=str(user.id),
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                phone=user.phone,
+                avatar_url=user.avatar_url,
+                role={"name": user.role.name},
+                is_active=user.is_active,
+                is_verified=user.is_verified,
+                created_at=user.created_at,
+            ),
         )
 
-    async def refresh(self, refresh_token: str) -> dict:
+    async def refresh(self, refresh_token: str) -> RefreshTokenResponse:
         from app.core.security import decode_token
         try:
             payload = decode_token(refresh_token)
@@ -69,4 +73,4 @@ class AuthService:
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         await self.db.refresh(user, ["role"])
-        return {"access_token": create_access_token(str(user.id), user.role.name), "token_type": "bearer"}
+        return RefreshTokenResponse(access_token=create_access_token(str(user.id), user.role.name), token_type="bearer")

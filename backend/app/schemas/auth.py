@@ -1,4 +1,25 @@
-from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class UserRoleSummary(BaseModel):
+    name: str
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+    role: UserRoleSummary
+    is_active: bool = True
+    is_verified: bool = False
+    created_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RegisterRequest(BaseModel):
@@ -18,8 +39,13 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-    user: dict
+    user: UserResponse
 
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
