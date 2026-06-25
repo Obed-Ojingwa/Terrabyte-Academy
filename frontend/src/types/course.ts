@@ -1,3 +1,10 @@
+export interface CourseTutor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url?: string;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -10,7 +17,7 @@ export interface Course {
   level?: "beginner" | "intermediate" | "advanced";
   duration_weeks?: number;
   is_published: boolean;
-  tutor?: { first_name: string; last_name: string };
+  tutor?: CourseTutor;
   created_at: string;
 }
 

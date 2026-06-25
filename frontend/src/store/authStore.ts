@@ -1,15 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
-
-interface User {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: { name: "super_admin" | "admin" | "tutor" | "student" };
-  avatar_url?: string;
-}
+import type { User } from "@/types/auth";
 
 interface AuthState {
   user: User | null;

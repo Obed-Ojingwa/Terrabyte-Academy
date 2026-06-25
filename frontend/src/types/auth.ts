@@ -1,3 +1,9 @@
+export type UserRoleName = "super_admin" | "admin" | "tutor" | "student";
+
+export interface UserRole {
+  name: UserRoleName;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -5,9 +11,10 @@ export interface User {
   last_name: string;
   phone?: string;
   avatar_url?: string;
-  role: { name: "super_admin" | "admin" | "tutor" | "student" };
-  is_verified: boolean;
-  created_at: string;
+  role: UserRole;
+  is_active?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
 }
 
 export interface TokenResponse {
@@ -15,4 +22,9 @@ export interface TokenResponse {
   refresh_token: string;
   token_type: string;
   user: User;
+}
+
+export interface RefreshTokenResponse {
+  access_token: string;
+  token_type: string;
 }
