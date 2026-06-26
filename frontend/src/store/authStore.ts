@@ -17,9 +17,19 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       login: (user, access, refresh) => {
+        const normalizedUser: User = {
+          ...user,
+          profile: user.profile ?? {
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            avatar_url: user.avatar_url,
+            phone: user.phone,
+          },
+        };
         Cookies.set("access_token", access, { expires: 1 });
         Cookies.set("refresh_token", refresh, { expires: 7 });
-        set({ user, isAuthenticated: true });
+        set({ user: normalizedUser, isAuthenticated: true });
       },
       logout: () => {
         Cookies.remove("access_token");
