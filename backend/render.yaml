@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: terrabyte-backend
+    env: python
+    plan: starter
+    region: oregon
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://your-vercel-app.vercel.app,http://localhost:3000
+      - key: REDIS_URL
+        value: redis://localhost:6379/0
+      - key: AWS_ACCESS_KEY
+        sync: false
+      - key: AWS_SECRET_KEY
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
