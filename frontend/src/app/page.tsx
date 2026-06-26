@@ -309,16 +309,16 @@ export default function HomePage() {
             <div className="sm:col-span-2 lg:col-span-1">
 
               {/* ── FOOTER LOGO ── */}
-              <Link href="/" className="flex items-center gap-2.5 mb-5">
+              <Link href="/" className="flex items-center gap-3 mb-5">
                 <Image
                   src={academyLogo}
                   alt="Terrabyte Academy"
-                  height={36}
-                  className="w-auto h-9 object-contain"
+                  height={48}
+                  className="w-auto h-10 sm:h-12 md:h-14 object-contain shrink-0"
                 />
                 <div className="leading-tight">
-                  <div className="font-black text-white text-sm"></div>
-                  <div className="text-blue-400 font-bold text-[10px] tracking-wider"></div>
+                  <div className="font-black text-white text-sm sm:text-base"></div>
+                  <div className="text-blue-400 font-bold text-[10px] sm:text-[11px] tracking-wider"></div>
                 </div>
               </Link>
 
