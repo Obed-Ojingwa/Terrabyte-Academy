@@ -10,16 +10,16 @@ class Settings(BaseSettings):
     APP_NAME: str = "Terrabyte Academy"
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app"
 
     @property
     def allowed_origins_list(self) -> List[str]:
         if not self.ALLOWED_ORIGINS:
-            return ["http://localhost:3000"]
+            return ["https://terrabyte-acad.vercel.app"]
 
         value = str(self.ALLOWED_ORIGINS).strip()
         if not value:
-            return ["http://localhost:3000"]
+            return ["https://terrabyte-acad.vercel.app"]
 
         if value.startswith("["):
             try:
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
         return [item.strip() for item in value.split(",") if item.strip()]
 
-    DATABASE_URL: str = "postgresql+asyncpg://terrabyte_user:TerraSecure2025!@localhost:5432/terrabyte_db"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres.lsikoutxslwhvytmijrf:Xcra1973dBBBB@aws-0-eu-west-3.pooler.supabase.com:6543/postgres"
     REDIS_URL: str = "redis://localhost:6379/0"
 
     JWT_SECRET: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
