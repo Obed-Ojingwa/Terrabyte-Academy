@@ -12,9 +12,9 @@ export interface Course {
   description?: string;
   thumbnail_url?: string;
   price: number;
-  mode: "online" | "physical" | "private";
+  mode: string;
   category?: string;
-  level?: "beginner" | "intermediate" | "advanced";
+  level?: string;
   duration_weeks?: number;
   is_published: boolean;
   tutor?: CourseTutor;

@@ -53,6 +53,54 @@ class CourseResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ModuleCreate(BaseModel):
+    title: str
+    position: int = 0
+
+
+class ModuleUpdate(BaseModel):
+    title: Optional[str] = None
+    position: Optional[int] = None
+
+
+class ModuleResponse(BaseModel):
+    id: UUID
+    course_id: UUID
+    title: str
+    position: int
+    lessons: List["LessonResponse"] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LessonCreate(BaseModel):
+    title: str
+    content: Optional[str] = None
+    position: int = 0
+    duration_min: Optional[int] = None
+    is_preview: bool = False
+
+
+class LessonUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    position: Optional[int] = None
+    duration_min: Optional[int] = None
+    is_preview: Optional[bool] = None
+
+
+class LessonResponse(BaseModel):
+    id: UUID
+    module_id: UUID
+    title: str
+    content: Optional[str] = None
+    position: int
+    duration_min: Optional[int] = None
+    is_preview: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CourseListResponse(BaseModel):
     items: List[CourseResponse]
     total: int
