@@ -10,7 +10,6 @@ venv/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
-backend/app/seed.py
 backend/tests/
 backend/verify_admin.py
 backend/seed_data.py
