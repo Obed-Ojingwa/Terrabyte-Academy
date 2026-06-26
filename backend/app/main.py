@@ -8,8 +8,8 @@ from app.seed import sync_seed_database
 app = FastAPI(
     title="Terrabyte Academy API",
     version="1.0.0",
-    docs_url="/api/docs" if settings.DEBUG else None,
-    redoc_url=None,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 
 try:
