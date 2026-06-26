@@ -4,44 +4,111 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 
+type BlogFormState = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  is_published: boolean;
+};
+
+type EventFormState = {
+  title: string;
+  description: string;
+  start_date: string;
+  is_online: boolean;
+};
+
 export default function AdminContentPage() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"blog" | "events" | "payments">("blog");
-  const [postTitle, setPostTitle] = useState("");
-  const [postSlug, setPostSlug] = useState("");
-  const [postExcerpt, setPostExcerpt] = useState("");
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [tab, setTab] = useState<"blog" | "events" | "payments" | "certificates">("blog");
+  const [postForm, setPostForm] = useState<BlogFormState>({ title: "", slug: "", excerpt: "", is_published: true });
+  const [editingPostSlug, setEditingPostSlug] = useState<string | null>(null);
+  const [eventForm, setEventForm] = useState<EventFormState>({ title: "", description: "", start_date: "", is_online: true });
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+
   const { data: blogPosts = [] } = useQuery({ queryKey: ["admin-blog"], queryFn: async () => (await api.get("/blog")).data });
   const { data: events = [] } = useQuery({ queryKey: ["admin-events"], queryFn: async () => (await api.get("/events")).data });
   const { data: paymentsData } = useQuery({ queryKey: ["admin-payments"], queryFn: async () => (await api.get("/payments/history")).data });
+  const { data: certificates = [] } = useQuery({ queryKey: ["admin-certificates"], queryFn: async () => (await api.get("/certificates/")).data });
 
-  const createPost = useMutation({
-    mutationFn: async () => api.post("/blog", { title: postTitle || "New post", slug: postSlug || `post-${Date.now()}`, excerpt: postExcerpt || "Draft", is_published: true }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-blog"] }); toast.success("Blog post published"); setPostTitle(""); setPostSlug(""); setPostExcerpt(""); },
-    onError: () => toast.error("Unable to create blog draft")
+  const savePost = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        title: postForm.title || "New post",
+        slug: postForm.slug || `post-${Date.now()}`,
+        excerpt: postForm.excerpt || "Draft",
+        is_published: postForm.is_published,
+      };
+      return editingPostSlug ? api.put(`/blog/${editingPostSlug}`, payload) : api.post("/blog", payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-blog"] });
+      toast.success(editingPostSlug ? "Blog post updated" : "Blog post published");
+      setPostForm({ title: "", slug: "", excerpt: "", is_published: true });
+      setEditingPostSlug(null);
+    },
+    onError: () => toast.error("Unable to save blog post"),
   });
 
-  const createEvent = useMutation({
-    mutationFn: async () => api.post("/events", { title: eventTitle || "New event", description: eventDescription || "Upcoming event", start_date: eventDate || new Date().toISOString(), is_online: true }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-events"] }); toast.success("Event created"); setEventTitle(""); setEventDescription(""); setEventDate(""); },
-    onError: () => toast.error("Unable to create event")
+  const deletePost = useMutation({
+    mutationFn: async (slug: string) => api.delete(`/blog/${slug}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-blog"] });
+      toast.success("Blog post removed");
+    },
+    onError: () => toast.error("Unable to remove blog post"),
+  });
+
+  const saveEvent = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        title: eventForm.title || "New event",
+        description: eventForm.description || "Upcoming event",
+        start_date: eventForm.start_date || new Date().toISOString(),
+        is_online: eventForm.is_online,
+      };
+      return editingEventId ? api.put(`/events/${editingEventId}`, payload) : api.post("/events", payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-events"] });
+      toast.success(editingEventId ? "Event updated" : "Event created");
+      setEventForm({ title: "", description: "", start_date: "", is_online: true });
+      setEditingEventId(null);
+    },
+    onError: () => toast.error("Unable to save event"),
+  });
+
+  const deleteEvent = useMutation({
+    mutationFn: async (eventId: string) => api.delete(`/events/${eventId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-events"] });
+      toast.success("Event removed");
+    },
+    onError: () => toast.error("Unable to remove event"),
+  });
+
+  const approveCertificate = useMutation({
+    mutationFn: async (certificateId: string) => api.put(`/certificates/${certificateId}/approve`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-certificates"] });
+      toast.success("Certificate approved");
+    },
+    onError: () => toast.error("Unable to approve certificate"),
   });
 
   const payments = useMemo(() => paymentsData?.items ?? [], [paymentsData]);
 
   return (
-    <div className="p-6 space-y-6 bg-[#03091A] min-h-full text-white">
-      <div className="flex items-center justify-between">
+    <div className="min-h-full bg-[#03091A] p-6 text-white">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight">Content & Payments</h1>
-          <p className="text-white/40 text-sm mt-1">Manage blog posts, events, and payment records.</p>
+          <p className="mt-1 text-sm text-white/40">Manage blog posts, events, certificates, and payment records.</p>
         </div>
       </div>
 
-      <div className="flex gap-2 rounded-xl border border-white/10 p-1 w-fit bg-[#071428]">
-        {(["blog", "events", "payments"] as const).map((item) => (
+      <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-[#071428] p-1">
+        {(["blog", "events", "payments", "certificates"] as const).map((item) => (
           <button key={item} onClick={() => setTab(item)} className={`rounded-lg px-4 py-2 text-sm capitalize ${tab === item ? "bg-brand-500 text-white" : "text-white/50"}`}>
             {item}
           </button>
@@ -49,26 +116,32 @@ export default function AdminContentPage() {
       </div>
 
       {tab === "blog" && (
-        <div className="bg-[#071428] border border-white/[0.06] rounded-2xl p-6 space-y-4">
+        <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-[#071428] p-6">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">Blog Posts</h2>
-            <button onClick={() => createPost.mutate()} className="rounded-xl bg-brand-500 px-4 py-2 text-sm">Publish post</button>
+            <button onClick={() => savePost.mutate()} className="rounded-xl bg-brand-500 px-4 py-2 text-sm">
+              {editingPostSlug ? "Update post" : "Publish post"}
+            </button>
           </div>
           <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
             <div className="space-y-3 rounded-2xl border border-white/10 bg-[#03091A] p-4">
-              <input value={postTitle} onChange={(e) => setPostTitle(e.target.value)} placeholder="Post title" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
-              <input value={postSlug} onChange={(e) => setPostSlug(e.target.value)} placeholder="Slug" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
-              <textarea value={postExcerpt} onChange={(e) => setPostExcerpt(e.target.value)} rows={4} placeholder="Excerpt" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              <input value={postForm.title} onChange={(e) => setPostForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="Post title" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              <input value={postForm.slug} onChange={(e) => setPostForm((prev) => ({ ...prev, slug: e.target.value }))} placeholder="Slug" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              <textarea value={postForm.excerpt} onChange={(e) => setPostForm((prev) => ({ ...prev, excerpt: e.target.value }))} rows={4} placeholder="Excerpt" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              {editingPostSlug && <button onClick={() => { setEditingPostSlug(null); setPostForm({ title: "", slug: "", excerpt: "", is_published: true }); }} className="text-sm text-white/40">Cancel editing</button>}
             </div>
             <div className="space-y-3">
               {blogPosts.map((post: any) => (
                 <div key={post.id} className="rounded-xl border border-white/10 p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold">{post.title}</p>
-                      <p className="text-sm text-white/40">{post.slug}</p>
+                      <p className="mt-1 text-sm text-white/40">{post.slug}</p>
                     </div>
-                    <span className="text-xs text-white/40">{post.is_published ? "Published" : "Draft"}</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setEditingPostSlug(post.slug); setPostForm({ title: post.title, slug: post.slug, excerpt: post.excerpt ?? "", is_published: post.is_published }); }} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-brand-300">Edit</button>
+                      <button onClick={() => deletePost.mutate(post.slug)} className="rounded-lg border border-rose-500/20 px-3 py-1.5 text-xs text-rose-300">Delete</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -78,22 +151,31 @@ export default function AdminContentPage() {
       )}
 
       {tab === "events" && (
-        <div className="bg-[#071428] border border-white/[0.06] rounded-2xl p-6 space-y-4">
+        <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-[#071428] p-6">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">Events</h2>
-            <button onClick={() => createEvent.mutate()} className="rounded-xl bg-brand-500 px-4 py-2 text-sm">Create event</button>
+            <button onClick={() => saveEvent.mutate()} className="rounded-xl bg-brand-500 px-4 py-2 text-sm">{editingEventId ? "Update event" : "Create event"}</button>
           </div>
           <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
             <div className="space-y-3 rounded-2xl border border-white/10 bg-[#03091A] p-4">
-              <input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} placeholder="Event title" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
-              <textarea value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} rows={4} placeholder="Description" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
-              <input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              <input value={eventForm.title} onChange={(e) => setEventForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="Event title" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              <textarea value={eventForm.description} onChange={(e) => setEventForm((prev) => ({ ...prev, description: e.target.value }))} rows={4} placeholder="Description" className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              <input type="datetime-local" value={eventForm.start_date} onChange={(e) => setEventForm((prev) => ({ ...prev, start_date: e.target.value }))} className="w-full rounded-xl border border-white/10 bg-[#071428] px-3 py-2 text-sm" />
+              {editingEventId && <button onClick={() => { setEditingEventId(null); setEventForm({ title: "", description: "", start_date: "", is_online: true }); }} className="text-sm text-white/40">Cancel editing</button>}
             </div>
             <div className="space-y-3">
               {events.map((event: any) => (
                 <div key={event.id} className="rounded-xl border border-white/10 p-4">
-                  <p className="font-semibold">{event.title}</p>
-                  <p className="text-sm text-white/40">{new Date(event.start_date).toLocaleString("en-NG")}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{event.title}</p>
+                      <p className="mt-1 text-sm text-white/40">{new Date(event.start_date).toLocaleString("en-NG")}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setEditingEventId(event.id); setEventForm({ title: event.title, description: event.description ?? "", start_date: event.start_date?.slice(0, 16) ?? "", is_online: event.is_online }); }} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-brand-300">Edit</button>
+                      <button onClick={() => deleteEvent.mutate(event.id)} className="rounded-lg border border-rose-500/20 px-3 py-1.5 text-xs text-rose-300">Delete</button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -102,11 +184,11 @@ export default function AdminContentPage() {
       )}
 
       {tab === "payments" && (
-        <div className="bg-[#071428] border border-white/[0.06] rounded-2xl p-6 space-y-4">
+        <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-[#071428] p-6">
           <h2 className="font-bold">Payment Records</h2>
           <div className="space-y-3">
             {payments.map((payment: any) => (
-              <div key={payment.id} className="rounded-xl border border-white/10 p-4 flex items-center justify-between">
+              <div key={payment.id} className="flex items-center justify-between rounded-xl border border-white/10 p-4">
                 <div>
                   <p className="font-semibold">{payment.gateway_ref}</p>
                   <p className="text-sm text-white/40">{payment.status}</p>
@@ -114,6 +196,36 @@ export default function AdminContentPage() {
                 <div className="text-right">
                   <p className="font-semibold">₦{Number(payment.amount).toLocaleString()}</p>
                   <p className="text-sm text-white/40">{new Date(payment.created_at).toLocaleDateString("en-NG")}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "certificates" && (
+        <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-[#071428] p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold">Certificate approvals</h2>
+            <span className="text-sm text-white/40">{certificates.filter((item: any) => item.status !== "issued").length} pending</span>
+          </div>
+          <div className="space-y-3">
+            {certificates.map((certificate: any) => (
+              <div key={certificate.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-[#03091A] p-4">
+                <div>
+                  <p className="font-semibold">{certificate.certificate_number}</p>
+                  <p className="mt-1 text-sm text-white/40">{certificate.student?.first_name} {certificate.student?.last_name}</p>
+                  <p className="text-xs text-white/30">{certificate.course?.title ?? "Course"}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${certificate.status === "issued" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
+                    {certificate.status}
+                  </span>
+                  {certificate.status !== "issued" && (
+                    <button onClick={() => approveCertificate.mutate(certificate.id)} className="rounded-lg border border-brand-500/20 bg-brand-500/10 px-3 py-1.5 text-xs text-brand-300">
+                      Approve
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

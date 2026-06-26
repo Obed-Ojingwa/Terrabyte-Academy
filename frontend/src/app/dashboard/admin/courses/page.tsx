@@ -6,6 +6,19 @@ import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
 
+type AdminCourse = {
+  id: string;
+  title?: string;
+  description?: string;
+  price?: number | string;
+  mode?: string;
+  category?: string;
+  level?: string;
+  duration_weeks?: number | string;
+  tutor?: { id?: string };
+  is_published?: boolean;
+};
+
 type CourseFormState = {
   title: string;
   description: string;
@@ -93,7 +106,7 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const startEdit = (course: Record<string, unknown>) => {
+  const startEdit = (course: AdminCourse) => {
     setEditingId(String(course.id));
     setForm({
       title: String(course.title ?? ""),
@@ -156,7 +169,7 @@ export default function AdminCoursesPage() {
           <h2 className="mb-4 text-lg font-semibold">Existing courses</h2>
           {isLoading ? <p className="text-sm text-white/40">Loading...</p> : (
             <div className="space-y-3">
-              {courses.map((course: any) => (
+              {courses.map((course: AdminCourse) => (
                 <div key={course.id} className="rounded-2xl border border-white/10 bg-[#03091A] p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>

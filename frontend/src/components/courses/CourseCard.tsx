@@ -4,11 +4,11 @@ import { formatCurrency } from "@/lib/utils";
 import { Clock, Monitor, MapPin, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const modeIcons = { online: Monitor, physical: MapPin, private: User };
+const modeIcons: Record<string, typeof Monitor> = { online: Monitor, physical: MapPin, private: User };
 const levelColors: Record<string, string> = { beginner: "bg-green-500/10 text-green-400", intermediate: "bg-yellow-500/10 text-yellow-400", advanced: "bg-red-500/10 text-red-400" };
 
 export default function CourseCard({ course }: { course: Course }) {
-  const ModeIcon = modeIcons[course.mode] || Monitor;
+  const ModeIcon = modeIcons[course.mode] ?? Monitor;
   return (
     <Link href={`/public/courses/${course.id}`} className="group block">
       <div className="bg-[#071428] border border-white/[0.07] hover:border-brand-500/40 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/50">

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
-from app.models.course import Course
+from app.models.course import Course, Module
 from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
 from app.core.cache import TTLCache
 
@@ -25,7 +25,11 @@ class CourseService:
         if cached is not None:
             return cached
 
-        base_query = select(Course).options(joinedload(Course.tutor)).where(Course.is_published == True)
+        base_query = (
+            select(Course)
+            .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons))
+            .where(Course.is_published == True)
+        )
         if search:
             base_query = base_query.where(Course.title.ilike(f"%{search}%"))
         if category:
@@ -49,7 +53,11 @@ class CourseService:
         return response
 
     async def get_course(self, course_id: str) -> CourseResponse:
-        result = await self.db.execute(select(Course).options(joinedload(Course.tutor)).where(Course.id == course_id))
+        result = await self.db.execute(
+            select(Course)
+            .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons))
+            .where(Course.id == course_id)
+        )
         course = result.scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")

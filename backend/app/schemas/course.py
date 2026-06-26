@@ -13,6 +13,26 @@ class CourseTutorSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CourseLessonSummary(BaseModel):
+    id: UUID
+    title: str
+    position: int
+    duration_min: Optional[int] = None
+    is_preview: bool = False
+    is_completed: bool = False
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseModuleSummary(BaseModel):
+    id: UUID
+    title: str
+    position: int
+    lessons: List[CourseLessonSummary] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
@@ -48,6 +68,7 @@ class CourseResponse(BaseModel):
     duration_weeks: Optional[int]
     is_published: bool
     tutor: Optional[CourseTutorSummary] = None
+    modules: Optional[List[CourseModuleSummary]] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

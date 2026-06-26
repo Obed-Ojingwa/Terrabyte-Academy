@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.certificate import Certificate
@@ -10,6 +11,18 @@ from app.services.notification_service import NotificationService
 from datetime import datetime
 
 router = APIRouter(prefix="/certificates", tags=["Certificates"])
+
+@router.get("/", response_model=list[CertificateResponse])
+async def list_certificates(
+    status: str | None = Query(None),
+    current_user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(Certificate).options(joinedload(Certificate.student), joinedload(Certificate.course))
+    if status:
+        query = query.where(Certificate.status == status)
+    result = await db.execute(query.order_by(Certificate.requested_at.desc()))
+    return result.scalars().all()
 
 @router.get("/me", response_model=list[CertificateResponse])
 async def my_certificates(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):

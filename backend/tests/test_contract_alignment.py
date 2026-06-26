@@ -1,5 +1,5 @@
 from app.schemas.auth import TokenResponse, UserResponse
-from app.schemas.course import CourseResponse, CourseTutorSummary
+from app.schemas.course import CourseResponse, CourseTutorSummary, CourseModuleSummary, CourseLessonSummary
 from app.schemas.lms import AssignmentCreate, AssignmentResponse, CertificateResponse, EnrollmentCreate, EnrollmentResponse, ExamCreate, ExamResponse, NotificationResponse, SubmissionResponse
 
 
@@ -137,6 +137,42 @@ def test_course_response_includes_tutor_summary():
     assert response.tutor.first_name == "Ada"
     assert response.tutor.last_name == "Lovelace"
     assert isinstance(response.tutor, CourseTutorSummary)
+
+
+def test_course_response_accepts_nested_module_progression():
+    course = DummyCourse()
+    course.modules = [
+        type(
+            "Module",
+            (),
+            {
+                "id": "33333333-3333-3333-3333-333333333333",
+                "title": "Setup",
+                "position": 1,
+                "lessons": [
+                    type(
+                        "Lesson",
+                        (),
+                        {
+                            "id": "44444444-4444-4444-4444-444444444444",
+                            "title": "Intro",
+                            "position": 1,
+                            "duration_min": 10,
+                            "is_preview": False,
+                            "is_completed": True,
+                        },
+                    )()
+                ],
+            },
+        )()
+    ]
+
+    response = CourseResponse.model_validate(course)
+
+    assert response.modules is not None
+    assert response.modules[0].title == "Setup"
+    assert response.modules[0].lessons[0].title == "Intro"
+    assert isinstance(response.modules[0].lessons[0], CourseLessonSummary)
 
 
 def test_lms_enrollment_and_assignment_contracts_validate():
