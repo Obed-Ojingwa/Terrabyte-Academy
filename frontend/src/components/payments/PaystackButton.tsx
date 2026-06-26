@@ -20,8 +20,11 @@ export default function PaystackButton({ courseId, amount, courseName, mode }: P
       } else {
         toast.success(data.message || "Payment record created. Please follow up with support.");
       }
-    } catch { toast.error("Payment initialization failed. Try again."); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error("Payment initialization failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <button onClick={handlePayment} disabled={loading} className="w-full py-4 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-900/50">

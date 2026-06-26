@@ -11,3 +11,21 @@ class NotificationService:
         self.db.add(notif)
         await self.db.commit()
         return notif
+
+    async def notify_enrollment(self, user_id: str, course_title: str):
+        return await self.create(
+            user_id=user_id,
+            title="Enrollment confirmed",
+            body=f"Your enrollment for {course_title} is now active.",
+            type="enrollment",
+            link="/dashboard/student/learning",
+        )
+
+    async def notify_certificate_issued(self, user_id: str, course_id: str):
+        return await self.create(
+            user_id=user_id,
+            title="Certificate ready",
+            body="Your certificate has been issued and is now available.",
+            type="certificate",
+            link="/dashboard/student/certificates",
+        )

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, courses, payments, certificates, notifications, analytics, blog, events, assignments, exams, enrollments, course_content
+from app.api.v1 import auth, users, courses, payments, certificates, notifications, analytics, blog, events, assignments, exams, enrollments, course_content, forum
 
 api_router = APIRouter()
 api_router.include_router(auth.router)
@@ -15,3 +15,4 @@ api_router.include_router(assignments.router)
 api_router.include_router(exams.router)
 api_router.include_router(enrollments.router)
 api_router.include_router(course_content.router)
+api_router.include_router(forum.router)

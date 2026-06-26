@@ -1,16 +1,34 @@
 "use client";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
+
 export default function SuperAdminDashboard() {
+  const { data: stats } = useQuery({ queryKey: ["superadmin-stats"], queryFn: async () => (await api.get("/analytics/admin")).data });
+
   return (
-    <div className="p-6 bg-[#03091A] min-h-full">
-      <h1 className="text-2xl font-black text-white mb-1">Platform Analytics</h1>
-      <p className="text-white/40 text-sm mb-8">Root administrator overview</p>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[{label:"Total Users",value:"1,284",color:"text-purple-400"},{label:"Students",value:"986",color:"text-brand-400"},{label:"Total Revenue",value:"₦14.2M",color:"text-yellow-400"},{label:"Certs Issued",value:"412",color:"text-green-400"}].map(s=>(
-          <div key={s.label} className="bg-[#071428] border border-white/[0.06] rounded-2xl p-5">
-            <p className={`text-2xl font-black mb-1 ${s.color}`}>{s.value}</p>
-            <p className="text-white/40 text-xs">{s.label}</p>
+    <div className="min-h-full bg-[#03091A] p-6">
+      <h1 className="mb-1 text-2xl font-black text-white">Platform Analytics</h1>
+      <p className="mb-8 text-sm text-white/40">Root administrator overview</p>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[{ label: "Total Users", value: stats?.total_students ?? 0, color: "text-purple-400" }, { label: "Students", value: stats?.total_students ?? 0, color: "text-brand-400" }, { label: "Total Revenue", value: `₦${((stats?.total_revenue ?? 0) / 1000000).toFixed(1)}M`, color: "text-yellow-400" }, { label: "Certs Issued", value: stats?.certificates_issued ?? 0, color: "text-green-400" }].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-[#071428] p-5">
+            <p className={`mb-1 text-2xl font-black ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-white/40">{s.label}</p>
           </div>
         ))}
+      </div>
+      <div className="mt-6 rounded-3xl border border-white/10 bg-[#071428] p-5">
+        <h2 className="mb-4 text-lg font-semibold text-white">Platform pulse</h2>
+        <div className="space-y-3 text-sm text-white/60">
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
+            <span>Active enrollments</span>
+            <span className="font-semibold text-brand-300">{stats?.active_enrollments ?? 0}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
+            <span>Pending certificate reviews</span>
+            <span className="font-semibold text-amber-300">{stats?.pending_reviews ?? 0}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

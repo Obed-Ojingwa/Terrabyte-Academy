@@ -13,6 +13,7 @@ export default function StudentDashboard() {
   const { data: stats } = useQuery({ queryKey: ["student-stats"], queryFn: async () => (await api.get("/analytics/student/stats")).data });
   const { data: enrollmentsData } = useQuery({ queryKey: ["my-enrollments"], queryFn: async () => (await api.get("/enrollments")).data });
   const { data: certificates = [] } = useQuery({ queryKey: ["student-certificates"], queryFn: async () => (await api.get("/certificates/me")).data });
+  const nextSteps = stats?.next_up ?? [];
 
   const requestCertificateMutation = useMutation({
     mutationFn: async (courseId: string) => api.post("/certificates/request", null, { params: { course_id: courseId } }),
@@ -33,6 +34,31 @@ export default function StudentDashboard() {
         <StatCard label="Completed" value={stats?.completed ?? 0} icon={<CheckCircle size={16}/>} color="green" />
         <StatCard label="Assignments" value={stats?.assignments ?? 0} icon={<Trophy size={16}/>} color="yellow" />
         <StatCard label="Certificates" value={stats?.certificates ?? 0} icon={<Award size={16}/>} color="purple" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.7fr] gap-4">
+        <div className="rounded-3xl border border-white/10 bg-[#071428] p-5">
+          <h2 className="font-bold text-white text-sm mb-4">Progress snapshot</h2>
+          <div className="rounded-2xl border border-white/10 bg-[#03091A] p-4 text-sm text-white/70">
+            <div className="flex items-center justify-between">
+              <span>Completion rate</span>
+              <span className="font-semibold text-brand-300">{stats?.completion_rate ?? 0}%</span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-brand-400" style={{ width: `${stats?.completion_rate ?? 0}%` }} />
+            </div>
+          </div>
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-[#071428] p-5">
+          <h2 className="font-bold text-white text-sm mb-4">Next steps</h2>
+          <div className="space-y-2">
+            {nextSteps.map((step:any) => (
+              <div key={step.title} className="rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3 text-sm">
+                <div className="font-semibold text-white">{step.title}</div>
+                <div className="mt-1 text-xs text-white/40">{step.meta}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
       <div>
         <h2 className="font-bold text-white text-sm mb-4">Active Courses</h2>

@@ -13,6 +13,7 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
     { label: "Assignments", icon: FileText, href: "/dashboard/student/assignments" },
     { label: "Exams", icon: Trophy, href: "/dashboard/student/exams" },
     { label: "Certificates", icon: Award, href: "/dashboard/student/certificates" },
+    { label: "Forum", icon: Users, href: "/dashboard/student/forum" },
     { label: "Profile", icon: User, href: "/dashboard/student/profile" },
   ],
   tutor: [

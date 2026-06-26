@@ -12,6 +12,8 @@ const revenueData = [
 
 export default function AdminDashboard() {
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: async () => (await api.get("/analytics/admin")).data });
+  const revenueSeries = stats?.revenue_series ?? [];
+  const activityItems = stats?.recent_activity ?? [];
   return (
     <div className="p-6 space-y-6 bg-[#03091A] min-h-full">
       <div className="flex items-center justify-between">
@@ -23,6 +25,30 @@ export default function AdminDashboard() {
         <StatCard label="Active Courses" value={stats?.total_courses ?? 0} icon={<BookOpen size={16}/>} color="green" change={5}/>
         <StatCard label="Revenue" value={`₦${((stats?.total_revenue ?? 0)/1000000).toFixed(1)}M`} icon={<CreditCard size={16}/>} color="yellow" change={18}/>
         <StatCard label="Certs Issued" value={stats?.certificates_issued ?? 0} icon={<Award size={16}/>} color="purple" change={9}/>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#071428] border border-white/[0.06] rounded-2xl p-6">
+          <h2 className="font-bold text-white text-sm mb-4">Live operations</h2>
+          <div className="space-y-3">
+            {activityItems.map((item:any) => (
+              <div key={item.label} className="flex items-center justify-between rounded-xl border border-white/10 bg-[#03091A] px-3 py-3 text-sm">
+                <span className="text-white/70">{item.label}</span>
+                <span className="font-semibold text-brand-300">{item.value} · {item.trend}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-[#071428] border border-white/[0.06] rounded-2xl p-6">
+          <h2 className="font-bold text-white text-sm mb-4">Revenue momentum</h2>
+          <div className="space-y-2">
+            {revenueSeries.map((item:any) => (
+              <div key={item.month} className="flex items-center justify-between text-sm text-white/60">
+                <span>{item.month}</span>
+                <span className="font-semibold text-white">₦{(item.value / 1000000).toFixed(1)}M</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-[#071428] border border-white/[0.06] rounded-2xl p-6">

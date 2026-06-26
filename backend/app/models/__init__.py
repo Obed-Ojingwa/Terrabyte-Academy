@@ -8,3 +8,4 @@ from app.models.certificate import Certificate
 from app.models.notification import Notification
 from app.models.blog import BlogPost
 from app.models.event import Event
+from app.models.forum import ForumThread, ForumReply
