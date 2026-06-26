@@ -9,6 +9,7 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
   student: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/student" },
     { label: "My Courses", icon: BookOpen, href: "/dashboard/student/courses" },
+    { label: "Learning", icon: BookOpen, href: "/dashboard/student/learning" },
     { label: "Assignments", icon: FileText, href: "/dashboard/student/assignments" },
     { label: "Exams", icon: Trophy, href: "/dashboard/student/exams" },
     { label: "Certificates", icon: Award, href: "/dashboard/student/certificates" },
@@ -17,6 +18,7 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
   tutor: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/tutor" },
     { label: "My Courses", icon: BookOpen, href: "/dashboard/tutor/courses" },
+    { label: "Assignments", icon: FileText, href: "/dashboard/tutor/assignments" },
     { label: "Submissions", icon: CheckSquare, href: "/dashboard/tutor/submissions" },
   ],
   admin: [
