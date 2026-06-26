@@ -1,4 +1,4 @@
-import re
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -19,8 +19,17 @@ elif database_url.startswith("postgresql://"):
 elif database_url.startswith("postgresql+psycopg2://"):
     database_url = database_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
 
+parsed = urlsplit(database_url)
+query_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+if "sslmode" in query_params:
+    query_params["ssl"] = query_params.pop("sslmode")
+if "ssl" not in query_params and parsed.hostname and parsed.hostname.endswith("supabase.co"):
+    query_params["ssl"] = "require"
+
+normalized_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query_params), parsed.fragment))
+
 engine = create_async_engine(
-    database_url,
+    normalized_url,
     **engine_kwargs,
 )
 
