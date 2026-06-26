@@ -5,6 +5,8 @@ from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.certificate import Certificate
 from app.schemas.lms import CertificateResponse
+from app.tasks.certificate_tasks import generate_and_upload_certificate
+from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/certificates", tags=["Certificates"])
 
@@ -41,4 +43,6 @@ async def approve_certificate(cert_id: str, current_user=Depends(require_admin),
     cert.status = "issued"
     cert.issued_at = datetime.utcnow()
     await db.commit()
-    return {"message": "Certificate approved and issued"}
+    await NotificationService(db).notify_certificate_issued(current_user.id, cert.course_id)
+    generate_and_upload_certificate.delay(str(cert.student_id), str(cert.course_id), cert.certificate_number)
+    return {"message": "Certificate approved and issued", "certificate_number": cert.certificate_number}

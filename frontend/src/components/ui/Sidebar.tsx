@@ -25,6 +25,7 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
     { label: "Students", icon: Users, href: "/dashboard/admin/students" },
     { label: "Payments", icon: CreditCard, href: "/dashboard/admin/payments" },
     { label: "Certificates", icon: Award, href: "/dashboard/admin/certificates" },
+    { label: "Content", icon: Newspaper, href: "/dashboard/admin/content" },
     { label: "Blog", icon: Newspaper, href: "/dashboard/admin/blog" },
     { label: "Events", icon: Calendar, href: "/dashboard/admin/events" },
   ],
