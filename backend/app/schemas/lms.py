@@ -37,6 +37,20 @@ class SubmissionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SubmissionReview(BaseModel):
+    score: Optional[float] = None
+    feedback: Optional[str] = None
+    status: str = "graded"
+
+
+class LessonProgressResponse(BaseModel):
+    lesson_id: UUID
+    is_completed: bool
+    watch_time_sec: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AssignmentCreate(BaseModel):
     course_id: UUID
     tutor_id: Optional[UUID] = None

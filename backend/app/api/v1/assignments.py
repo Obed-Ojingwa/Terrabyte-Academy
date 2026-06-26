@@ -4,9 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin, require_tutor
-from app.models.assignment import Assignment
+from app.models.assignment import Assignment, Submission
 from app.models.course import Course
-from app.schemas.lms import AssignmentCreate, AssignmentResponse, AssignmentUpdate
+from app.schemas.lms import AssignmentCreate, AssignmentResponse, AssignmentUpdate, SubmissionResponse, SubmissionReview
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
@@ -71,6 +71,54 @@ async def update_assignment(
     await db.commit()
     await db.refresh(assignment)
     return assignment
+
+
+@router.post("/{assignment_id}/submissions", response_model=SubmissionResponse, status_code=201)
+async def create_submission(
+    assignment_id: str,
+    payload: SubmissionReview,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    assignment = (await db.execute(select(Assignment).where(Assignment.id == assignment_id))).scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    submission = Submission(
+        assignment_id=assignment_id,
+        student_id=current_user.id,
+        status="submitted",
+        score=payload.score,
+        feedback=payload.feedback,
+    )
+    db.add(submission)
+    await db.commit()
+    await db.refresh(submission)
+    return submission
+
+
+@router.put("/{assignment_id}/submissions/{submission_id}", response_model=SubmissionResponse)
+async def review_submission(
+    assignment_id: str,
+    submission_id: str,
+    payload: SubmissionReview,
+    current_user=Depends(require_tutor),
+    db: AsyncSession = Depends(get_db),
+):
+    submission = (
+        await db.execute(
+            select(Submission).where(Submission.id == submission_id, Submission.assignment_id == assignment_id)
+        )
+    ).scalar_one_or_none()
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    submission.score = payload.score
+    submission.feedback = payload.feedback
+    submission.status = payload.status
+    await db.commit()
+    await db.refresh(submission)
+    return submission
 
 
 @router.delete("/{assignment_id}", status_code=204)

@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
-from app.models.enrollment import Enrollment
+from app.models.enrollment import Enrollment, LessonProgress
 from app.models.course import Course
-from app.schemas.lms import EnrollmentCreate, EnrollmentResponse, EnrollmentUpdate
+from app.schemas.lms import EnrollmentCreate, EnrollmentResponse, EnrollmentUpdate, LessonProgressResponse
 
 router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
 
@@ -62,6 +62,33 @@ async def update_enrollment(enrollment_id: str, payload: EnrollmentUpdate, curre
     await db.commit()
     await db.refresh(enrollment)
     return enrollment
+
+
+@router.post("/{enrollment_id}/lessons/{lesson_id}/progress", response_model=LessonProgressResponse)
+async def upsert_lesson_progress(
+    enrollment_id: str,
+    lesson_id: str,
+    payload: LessonProgressResponse,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    enrollment = (await db.execute(select(Enrollment).where(Enrollment.id == enrollment_id))).scalar_one_or_none()
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    if enrollment.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    progress = (
+        await db.execute(select(LessonProgress).where(LessonProgress.student_id == current_user.id, LessonProgress.lesson_id == lesson_id))
+    ).scalar_one_or_none()
+    if not progress:
+        progress = LessonProgress(student_id=current_user.id, lesson_id=lesson_id)
+        db.add(progress)
+    progress.is_completed = payload.is_completed
+    progress.watch_time_sec = payload.watch_time_sec
+    await db.commit()
+    await db.refresh(progress)
+    return LessonProgressResponse(lesson_id=progress.lesson_id, is_completed=progress.is_completed, watch_time_sec=progress.watch_time_sec)
 
 
 @router.delete("/{enrollment_id}", status_code=204)
