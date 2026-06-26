@@ -2,7 +2,7 @@ import json
 import secrets
 from typing import List
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -10,30 +10,26 @@ class Settings(BaseSettings):
     APP_NAME: str = "Terrabyte Academy"
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    ALLOWED_ORIGINS: List[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def parse_allowed_origins(cls, value):
-        if value is None or value == "":
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        if not self.ALLOWED_ORIGINS:
             return ["http://localhost:3000"]
 
-        if isinstance(value, str):
-            value = value.strip()
-            if not value:
-                return ["http://localhost:3000"]
+        value = str(self.ALLOWED_ORIGINS).strip()
+        if not value:
+            return ["http://localhost:3000"]
 
-            if value.startswith("["):
-                try:
-                    parsed = json.loads(value)
-                    if isinstance(parsed, list):
-                        return [str(item).strip() for item in parsed if str(item).strip()]
-                except json.JSONDecodeError:
-                    pass
+        if value.startswith("["):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return [str(item).strip() for item in parsed if str(item).strip()]
+            except json.JSONDecodeError:
+                pass
 
-            return [item.strip() for item in value.split(",") if item.strip()]
-
-        return value
+        return [item.strip() for item in value.split(",") if item.strip()]
 
     DATABASE_URL: str = "postgresql+asyncpg://terrabyte_user:TerraSecure2025!@localhost:5432/terrabyte_db"
     REDIS_URL: str = "redis://localhost:6379/0"

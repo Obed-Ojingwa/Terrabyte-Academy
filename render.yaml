@@ -16,7 +16,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: ALLOWED_ORIGINS
-        value: '["https://your-vercel-app.vercel.app","http://localhost:3000"]'
+        value: https://your-vercel-app.vercel.app,http://localhost:3000
       - key: REDIS_URL
         value: redis://localhost:6379/0
       - key: AWS_ACCESS_KEY
