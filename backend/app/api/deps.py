@@ -8,6 +8,10 @@ from app.core.security import decode_token
 security = HTTPBearer()
 
 
+def _permission_error() -> HTTPException:
+    return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
@@ -29,7 +33,22 @@ async def get_current_user(
 def require_role(*roles: str):
     async def checker(current_user=Depends(get_current_user)):
         if current_user.role.name not in roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise _permission_error()
+        return current_user
+    return checker
+
+
+def require_permission(permission: str):
+    async def checker(current_user=Depends(get_current_user)):
+        role_name = current_user.role.name
+        allowed_permissions = {
+            "super_admin": {"manage_content", "manage_payments", "manage_courses", "manage_users"},
+            "admin": {"manage_content", "manage_payments", "manage_courses"},
+            "tutor": {"manage_courses"},
+            "student": set(),
+        }
+        if permission not in allowed_permissions.get(role_name, set()):
+            raise _permission_error()
         return current_user
     return checker
 
@@ -37,3 +56,6 @@ def require_role(*roles: str):
 require_super_admin = require_role("super_admin")
 require_admin = require_role("super_admin", "admin")
 require_tutor = require_role("super_admin", "admin", "tutor")
+require_manage_content = require_permission("manage_content")
+require_manage_payments = require_permission("manage_payments")
+require_manage_courses = require_permission("manage_courses")

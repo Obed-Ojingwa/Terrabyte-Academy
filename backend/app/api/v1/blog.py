@@ -1,26 +1,38 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.blog import BlogPost
 from app.schemas.content import BlogPostCreate, BlogPostResponse, BlogPostUpdate
+from app.core.cache import TTLCache
 
 router = APIRouter(prefix="/blog", tags=["Blog"])
+_blog_cache = TTLCache(ttl_seconds=60)
 
 
 @router.get("/", response_model=list[BlogPostResponse])
 async def list_posts(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BlogPost).where(BlogPost.is_published == True).order_by(BlogPost.published_at.desc()))
-    return result.scalars().all()
+    cached = _blog_cache.get("blog:list")
+    if cached is not None:
+        return cached
+    result = await db.execute(select(BlogPost).options(joinedload(BlogPost.author)).where(BlogPost.is_published == True).order_by(BlogPost.published_at.desc()))
+    posts = result.scalars().all()
+    _blog_cache.set("blog:list", posts)
+    return posts
 
 
 @router.get("/{slug}", response_model=BlogPostResponse)
 async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BlogPost).where(BlogPost.slug == slug))
+    cached = _blog_cache.get(f"blog:{slug}")
+    if cached is not None:
+        return cached
+    result = await db.execute(select(BlogPost).options(joinedload(BlogPost.author)).where(BlogPost.slug == slug))
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
+    _blog_cache.set(f"blog:{slug}", post)
     return post
 
 

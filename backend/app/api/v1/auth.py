@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, RefreshRequest
 from app.services.auth_service import AuthService
+from app.api.deps import security
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -19,5 +21,5 @@ async def refresh_token(payload: RefreshRequest, db: AsyncSession = Depends(get_
     return await AuthService(db).refresh(payload.refresh_token)
 
 @router.post("/logout")
-async def logout():
-    return {"message": "Logged out successfully"}
+async def logout(credentials: HTTPAuthorizationCredentials = Depends(security), db: AsyncSession = Depends(get_db)):
+    return await AuthService(db).logout(credentials.credentials)

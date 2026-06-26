@@ -1,17 +1,20 @@
-from pydantic_settings import BaseSettings
+import secrets
 from typing import List
+
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     APP_NAME: str = "Terrabyte Academy"
     DEBUG: bool = False
-    SECRET_KEY: str = "change-me"
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    ALLOWED_ORIGINS: List[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
     DATABASE_URL: str = "postgresql+asyncpg://terrabyte_user:TerraSecure2025!@localhost:5432/terrabyte_db"
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    JWT_SECRET: str = "change-me-jwt"
+    JWT_SECRET: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MIN: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

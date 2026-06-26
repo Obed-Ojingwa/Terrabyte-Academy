@@ -5,22 +5,33 @@ from app.database import get_db
 from app.api.deps import require_admin
 from app.models.event import Event
 from app.schemas.content import EventCreate, EventResponse, EventUpdate
+from app.core.cache import TTLCache
 
 router = APIRouter(prefix="/events", tags=["Events"])
+_events_cache = TTLCache(ttl_seconds=60)
 
 
 @router.get("/", response_model=list[EventResponse])
 async def list_events(db: AsyncSession = Depends(get_db)):
+    cached = _events_cache.get("events:list")
+    if cached is not None:
+        return cached
     result = await db.execute(select(Event).order_by(Event.start_date))
-    return result.scalars().all()
+    events = result.scalars().all()
+    _events_cache.set("events:list", events)
+    return events
 
 
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(event_id: str, db: AsyncSession = Depends(get_db)):
+    cached = _events_cache.get(f"events:{event_id}")
+    if cached is not None:
+        return cached
     result = await db.execute(select(Event).where(Event.id == event_id))
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    _events_cache.set(f"events:{event_id}", event)
     return event
 
 

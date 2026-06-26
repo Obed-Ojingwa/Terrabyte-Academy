@@ -9,6 +9,7 @@ from app.models.payment import Payment
 from app.models.enrollment import Enrollment
 from app.models.course import Course
 from app.services.notification_service import NotificationService
+from app.core.cache import TTLCache
 
 
 class PaymentService:
@@ -16,6 +17,7 @@ class PaymentService:
         self.db = db
         self.base = "https://api.paystack.co"
         self.headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}", "Content-Type": "application/json"}
+        self._cache = TTLCache(ttl_seconds=300)
 
     async def initialize_payment(self, course_id: str, mode: str, user):
         course = (await self.db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
@@ -43,6 +45,9 @@ class PaymentService:
         return {"authorization_url": data["data"]["authorization_url"], "reference": data["data"]["reference"]}
 
     async def verify_payment(self, reference: str, user):
+        cached = self._cache.get(f"payment:{reference}")
+        if cached is not None:
+            return cached
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.get(f"{self.base}/transaction/verify/{reference}", headers=self.headers)
@@ -56,6 +61,12 @@ class PaymentService:
         course = (await self.db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
+
+        existing_payment = (await self.db.execute(select(Payment).where(Payment.gateway_ref == reference))).scalar_one_or_none()
+        if existing_payment and existing_payment.status == "success":
+            self._cache.set(f"payment:{reference}", {"message": "Payment already processed."})
+            return {"message": "Payment already processed."}
+
         payment = Payment(student_id=user.id, course_id=course_id, amount=data["data"]["amount"] / 100, gateway="paystack", gateway_ref=reference, status="success")
         self.db.add(payment)
         existing = (await self.db.execute(select(Enrollment).where(Enrollment.student_id == user.id, Enrollment.course_id == course_id))).scalar_one_or_none()
@@ -64,7 +75,9 @@ class PaymentService:
             self.db.add(enrollment)
         await self.db.commit()
         await NotificationService(self.db).notify_enrollment(user.id, course.title)
-        return {"message": "Payment verified. Enrollment activated."}
+        response = {"message": "Payment verified. Enrollment activated."}
+        self._cache.set(f"payment:{reference}", response)
+        return response
 
     async def handle_webhook(self, request: Request):
         body = await request.body()

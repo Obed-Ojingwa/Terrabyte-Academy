@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
 from app.models.course import Course
 from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
+from app.core.cache import TTLCache
 
 
 def slugify(text: str) -> str:
@@ -16,25 +17,36 @@ def slugify(text: str) -> str:
 class CourseService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self._cache = TTLCache(ttl_seconds=30)
 
     async def list_courses(self, search, category, mode, level, page, page_size) -> CourseListResponse:
-        query = select(Course).options(joinedload(Course.tutor)).where(Course.is_published == True)
+        cache_key = f"courses:{search}:{category}:{mode}:{level}:{page}:{page_size}"
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        base_query = select(Course).options(joinedload(Course.tutor)).where(Course.is_published == True)
         if search:
-            query = query.where(Course.title.ilike(f"%{search}%"))
+            base_query = base_query.where(Course.title.ilike(f"%{search}%"))
         if category:
-            query = query.where(Course.category == category)
+            base_query = base_query.where(Course.category == category)
         if mode:
-            query = query.where(Course.mode == mode)
+            base_query = base_query.where(Course.mode == mode)
         if level:
-            query = query.where(Course.level == level)
-        total = (await self.db.execute(select(func.count()).select_from(query.subquery()))).scalar()
-        query = query.offset((page - 1) * page_size).limit(page_size)
-        courses = (await self.db.execute(query)).scalars().all()
-        return CourseListResponse(
+            base_query = base_query.where(Course.level == level)
+
+        count_query = select(func.count()).select_from(base_query.subquery())
+        total = (await self.db.execute(count_query)).scalar_one()
+
+        paged_query = base_query.offset((page - 1) * page_size).limit(page_size)
+        courses = (await self.db.execute(paged_query)).scalars().all()
+        response = CourseListResponse(
             items=[CourseResponse.model_validate(c) for c in courses],
             total=total, page=page, page_size=page_size,
             total_pages=(total + page_size - 1) // page_size,
         )
+        self._cache.set(cache_key, response)
+        return response
 
     async def get_course(self, course_id: str) -> CourseResponse:
         result = await self.db.execute(select(Course).options(joinedload(Course.tutor)).where(Course.id == course_id))

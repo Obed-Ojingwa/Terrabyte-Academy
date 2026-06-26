@@ -1,9 +1,11 @@
+import uuid
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
 from app.models.user import User, Role
 from app.schemas.auth import RegisterRequest, LoginRequest, RefreshTokenResponse, TokenResponse, UserResponse
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, revoke_token, decode_token
 
 
 class AuthService:
@@ -43,9 +45,11 @@ class AuthService:
         return self._build_tokens(user)
 
     def _build_tokens(self, user: User) -> TokenResponse:
+        access_token_id = str(uuid.uuid4())
+        refresh_token_id = str(uuid.uuid4())
         return TokenResponse(
-            access_token=create_access_token(str(user.id), user.role.name),
-            refresh_token=create_refresh_token(str(user.id)),
+            access_token=create_access_token(str(user.id), user.role.name, token_id=access_token_id),
+            refresh_token=create_refresh_token(str(user.id), token_id=refresh_token_id),
             user=UserResponse(
                 id=str(user.id),
                 email=user.email,
@@ -73,4 +77,18 @@ class AuthService:
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         await self.db.refresh(user, ["role"])
-        return RefreshTokenResponse(access_token=create_access_token(str(user.id), user.role.name), token_type="bearer")
+        revoke_token(refresh_token)
+        new_refresh_token = create_refresh_token(str(user.id))
+        return RefreshTokenResponse(
+            access_token=create_access_token(str(user.id), user.role.name),
+            refresh_token=new_refresh_token,
+            token_type="bearer",
+        )
+
+    async def logout(self, token: str) -> dict:
+        try:
+            decode_token(token)
+        except ValueError as exc:
+            raise HTTPException(status_code=401, detail=str(exc)) from exc
+        revoke_token(token)
+        return {"message": "Logged out successfully"}
