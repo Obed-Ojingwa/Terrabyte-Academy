@@ -40,14 +40,7 @@ def require_role(*roles: str):
 
 def require_permission(permission: str):
     async def checker(current_user=Depends(get_current_user)):
-        role_name = current_user.role.name
-        allowed_permissions = {
-            "super_admin": {"manage_content", "manage_payments", "manage_courses", "manage_users"},
-            "admin": {"manage_content", "manage_payments", "manage_courses"},
-            "tutor": {"manage_courses"},
-            "student": set(),
-        }
-        if permission not in allowed_permissions.get(role_name, set()):
+        if not current_user.has_permission(permission):
             raise _permission_error()
         return current_user
     return checker
