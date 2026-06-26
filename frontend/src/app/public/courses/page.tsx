@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useCourses } from "@/hooks/useCourses";
+import { useCourses, usePopularCourses } from "@/hooks/useCourses";
 import CourseCard from "@/components/courses/CourseCard";
 import CourseFilter from "@/components/courses/CourseFilter";
 
@@ -8,6 +8,7 @@ export default function CoursesPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const { data, isLoading } = useCourses({ ...filters, ...(search ? { search } : {}) });
+  const { data: suggestions } = usePopularCourses(6);
   return (
     <div className="bg-[#03091A] min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -17,6 +18,17 @@ export default function CoursesPage() {
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25">⌕</span>
           <input type="text" placeholder="Search courses..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 focus:border-brand-500 text-white placeholder:text-white/20 rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all"/>
         </div>
+        {suggestions?.length ? (
+          <div className="mb-10">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Popular suggestions</h2>
+              <span className="text-sm text-white/35">Based on enrollments</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {suggestions.map((course: any) => <CourseCard key={course.id} course={course} />)}
+            </div>
+          </div>
+        ) : null}
         <div className="flex gap-10">
           <div className="w-52 shrink-0"><CourseFilter filters={filters} onChange={setFilters}/></div>
           <div className="flex-1">

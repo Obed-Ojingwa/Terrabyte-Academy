@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
 from app.models.course import Course, Module
+from app.models.enrollment import Enrollment
 from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
 from app.core.cache import TTLCache
 
@@ -51,6 +52,30 @@ class CourseService:
         )
         self._cache.set(cache_key, response)
         return response
+
+    async def list_popular_courses(self, limit: int = 6) -> list[CourseResponse]:
+        popular_query = (
+            select(Course)
+            .join(Enrollment, Enrollment.course_id == Course.id)
+            .options(joinedload(Course.tutor))
+            .where(Course.is_published == True)
+            .group_by(Course.id)
+            .order_by(func.count(Enrollment.id).desc(), Course.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.db.execute(popular_query)
+        courses = result.scalars().all()
+        if not courses:
+            fallback_query = (
+                select(Course)
+                .options(joinedload(Course.tutor))
+                .where(Course.is_published == True)
+                .order_by(Course.created_at.desc())
+                .limit(limit)
+            )
+            result = await self.db.execute(fallback_query)
+            courses = result.scalars().all()
+        return [CourseResponse.model_validate(course) for course in courses]
 
     async def get_course(self, course_id: str) -> CourseResponse:
         result = await self.db.execute(

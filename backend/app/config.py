@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     AWS_BUCKET: str = "terrabyte-media"
     AWS_REGION: str = "us-east-1"
 
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_BUCKET_NAME: str = ""
+    S3_REGION: str = "us-east-1"
+    S3_ENDPOINT_URL: str = ""
+
     PAYSTACK_SECRET_KEY: str = ""
     PAYSTACK_PUBLIC_KEY: str = ""
 

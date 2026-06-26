@@ -20,6 +20,10 @@ async def list_courses(
 ):
     return await CourseService(db).list_courses(search, category, mode, level, page, page_size)
 
+@router.get("/suggestions", response_model=list[CourseResponse])
+async def popular_courses(limit: int = Query(6, ge=1, le=12), db: AsyncSession = Depends(get_db)):
+    return await CourseService(db).list_popular_courses(limit)
+
 @router.get("/{course_id}", response_model=CourseResponse)
 async def get_course(course_id: str, db: AsyncSession = Depends(get_db)):
     return await CourseService(db).get_course(course_id)

@@ -10,6 +10,10 @@ export function useCourse(id: string) {
   return useQuery({ queryKey: ["course", id], queryFn: async () => (await api.get(`/courses/${id}`)).data, enabled: !!id });
 }
 
+export function usePopularCourses(limit = 6) {
+  return useQuery({ queryKey: ["popular-courses", limit], queryFn: async () => (await api.get("/courses/suggestions", { params: { limit } })).data });
+}
+
 export function useMyEnrollments() {
   return useQuery({ queryKey: ["my-enrollments"], queryFn: async () => (await api.get("/enrollments/" )).data });
 }

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import MediaUploader from "@/components/uploads/MediaUploader";
 
 type AdminCourse = {
   id: string;
@@ -47,6 +48,7 @@ export default function AdminCoursesPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<CourseFormState>(emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-courses"],
@@ -59,6 +61,7 @@ export default function AdminCoursesPage() {
       toast.success("Course created");
       queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
       setForm(emptyForm());
+      setThumbnailUrl("");
     },
     onError: () => toast.error("Unable to create course"),
   });
@@ -70,6 +73,7 @@ export default function AdminCoursesPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
       setEditingId(null);
       setForm(emptyForm());
+      setThumbnailUrl("");
     },
     onError: () => toast.error("Unable to update course"),
   });
@@ -97,6 +101,7 @@ export default function AdminCoursesPage() {
       duration_weeks: form.duration_weeks ? Number(form.duration_weeks) : null,
       tutor_id: form.tutor_id || null,
       is_published: form.is_published,
+      thumbnail_url: thumbnailUrl || null,
     };
 
     if (editingId) {
@@ -157,6 +162,9 @@ export default function AdminCoursesPage() {
             </label>
           </div>
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-4 min-h-[120px] w-full rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Description" />
+          <div className="mt-4">
+            <MediaUploader label="Course thumbnail" accept="image/*" onUploaded={(url) => setThumbnailUrl(url)} />
+          </div>
           <div className="mt-5 flex gap-3">
             <button type="submit" className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">
               <Plus size={16} /> {editingId ? "Save changes" : "Create course"}
