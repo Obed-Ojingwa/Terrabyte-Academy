@@ -23,11 +23,14 @@ export interface Course {
 
 export interface Enrollment {
   id: string;
-  course: Course;
+  student_id?: string;
+  course_id?: string;
+  course?: Course;
   mode: string;
   status: "pending" | "active" | "completed";
   progress?: number;
   enrolled_at: string;
+  completed_at?: string;
 }
 
 export interface Module {

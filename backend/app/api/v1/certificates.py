@@ -4,22 +4,23 @@ from sqlalchemy import select
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.certificate import Certificate
+from app.schemas.lms import CertificateResponse
 
 router = APIRouter(prefix="/certificates", tags=["Certificates"])
 
-@router.get("/me")
+@router.get("/me", response_model=list[CertificateResponse])
 async def my_certificates(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Certificate).where(Certificate.student_id == current_user.id))
     certs = result.scalars().all()
-    return {"items": [{"id": str(c.id), "certificate_number": c.certificate_number, "status": c.status, "issued_at": c.issued_at} for c in certs]}
+    return certs
 
-@router.get("/verify/{cert_number}")
+@router.get("/verify/{cert_number}", response_model=CertificateResponse)
 async def verify_certificate(cert_number: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Certificate).where(Certificate.certificate_number == cert_number))
     cert = result.scalar_one_or_none()
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found or invalid")
-    return {"valid": True, "certificate_number": cert.certificate_number, "issued_at": cert.issued_at, "status": cert.status}
+    return cert
 
 @router.post("/request")
 async def request_certificate(course_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):

@@ -15,7 +15,11 @@ export default function PaystackButton({ courseId, amount, courseName, mode }: P
     setLoading(true);
     try {
       const { data } = await api.post("/payments/initialize", null, { params: { course_id: courseId, mode } });
-      window.location.href = data.authorization_url;
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        toast.success(data.message || "Payment record created. Please follow up with support.");
+      }
     } catch { toast.error("Payment initialization failed. Try again."); }
     finally { setLoading(false); }
   };

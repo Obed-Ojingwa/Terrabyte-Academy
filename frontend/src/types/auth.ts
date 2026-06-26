@@ -4,6 +4,14 @@ export interface UserRole {
   name: UserRoleName;
 }
 
+export interface UserProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url?: string;
+  phone?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -12,6 +20,7 @@ export interface User {
   phone?: string;
   avatar_url?: string;
   role: UserRole;
+  profile?: UserProfile;
   is_active?: boolean;
   is_verified?: boolean;
   created_at?: string;

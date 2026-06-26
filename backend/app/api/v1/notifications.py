@@ -4,14 +4,15 @@ from sqlalchemy import select, update
 from app.database import get_db
 from app.api.deps import get_current_user
 from app.models.notification import Notification
+from app.schemas.lms import NotificationResponse
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
-@router.get("/")
+@router.get("/", response_model=list[NotificationResponse])
 async def get_notifications(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Notification).where(Notification.user_id == current_user.id).order_by(Notification.created_at.desc()).limit(50))
     notifs = result.scalars().all()
-    return {"items": [{"id": str(n.id), "title": n.title, "body": n.body, "type": n.type, "is_read": n.is_read, "link": n.link, "created_at": n.created_at} for n in notifs]}
+    return notifs
 
 @router.put("/{notif_id}/read")
 async def mark_read(notif_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):

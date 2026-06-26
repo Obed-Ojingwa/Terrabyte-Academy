@@ -11,13 +11,19 @@ export function useCourse(id: string) {
 }
 
 export function useMyEnrollments() {
-  return useQuery({ queryKey: ["my-enrollments"], queryFn: async () => (await api.get("/enrollments/me")).data });
+  return useQuery({ queryKey: ["my-enrollments"], queryFn: async () => (await api.get("/enrollments/" )).data });
 }
 
 export function useEnrollCourse() {
   return useMutation({
     mutationFn: async ({ courseId, mode }: { courseId: string; mode: string }) => (await api.post("/payments/initialize", null, { params: { course_id: courseId, mode } })).data,
-    onSuccess: (data) => { window.location.href = data.authorization_url; },
+    onSuccess: (data) => {
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        toast.success(data.message || "Enrollment pending.");
+      }
+    },
     onError: () => toast.error("Enrollment failed. Please try again."),
   });
 }
