@@ -33,10 +33,9 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
         username = parsed.username or ""
         project_ref = username.split(".", 1)[1] if "." in username else ""
         if project_ref:
-            host = f"db.{project_ref}.supabase.co"
+            host = f"{project_ref}.supabase.co"
         else:
             host = host.replace(".pooler.supabase.com", ".supabase.co")
-            
 
         userinfo = ""
         if parsed.username:
@@ -48,11 +47,17 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
         parsed = parsed._replace(netloc=netloc)
 
     if "ssl" in query_params:
-        connect_args["ssl"] = query_params["ssl"]
+        ssl_value = query_params.pop("ssl")
+        if isinstance(ssl_value, str) and ssl_value.lower() in {"true", "1", "yes", "require"}:
+            connect_args["ssl"] = True
+        elif isinstance(ssl_value, str) and ssl_value.lower() in {"false", "0", "no", "disable"}:
+            connect_args["ssl"] = False
+        else:
+            connect_args["ssl"] = ssl_value
     elif host and (
         host.endswith("supabase.co") or host.endswith("supabase.com") or ".pooler.supabase.com" in host
     ):
-        connect_args["ssl"] = "require"
+        connect_args["ssl"] = True
 
     normalized_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query_params), parsed.fragment))
     return {"database_url": normalized_url, "connect_args": connect_args}

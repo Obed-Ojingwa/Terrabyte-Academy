@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
         return [item.strip() for item in value.split(",") if item.strip() and item.strip().startswith(("http://", "https://"))]
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres.lsikoutxslwhvytmijrf:Xcra1973dBBBB@aws-0-eu-west-3.pooler.supabase.com:6543/postgres"
+    DATABASE_URL: str = Field(..., env="DATABASE_URL")
     REDIS_URL: str = "redis://localhost:6379/0"
 
     JWT_SECRET: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
