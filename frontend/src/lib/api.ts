@@ -1,8 +1,14 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
+const fallbackBaseUrl = typeof window !== "undefined"
+  ? window.location.origin.includes("vercel.app")
+    ? "https://terrabyte-acad-backend.onrender.com/api/v1"
+    : "http://localhost:8000/api/v1"
+  : "https://terrabyte-acad-backend.onrender.com/api/v1";
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || fallbackBaseUrl,
   headers: { "Content-Type": "application/json" },
 });
 

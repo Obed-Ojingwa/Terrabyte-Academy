@@ -10,26 +10,26 @@ class Settings(BaseSettings):
     APP_NAME: str = "Terrabyte Academy"
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app"
+    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,http://localhost:3000"
 
     @property
     def allowed_origins_list(self) -> List[str]:
         if not self.ALLOWED_ORIGINS:
-            return ["https://terrabyte-acad.vercel.app"]
+            return ["https://terrabyte-acad.vercel.app", "http://localhost:3000"]
 
         value = str(self.ALLOWED_ORIGINS).strip()
         if not value:
-            return ["https://terrabyte-acad.vercel.app"]
+            return ["https://terrabyte-acad.vercel.app", "http://localhost:3000"]
 
         if value.startswith("["):
             try:
                 parsed = json.loads(value)
                 if isinstance(parsed, list):
-                    return [str(item).strip() for item in parsed if str(item).strip()]
+                    return [str(item).strip() for item in parsed if str(item).strip() and str(item).strip().startswith(("http://", "https://"))]
             except json.JSONDecodeError:
                 pass
 
-        return [item.strip() for item in value.split(",") if item.strip()]
+        return [item.strip() for item in value.split(",") if item.strip() and item.strip().startswith(("http://", "https://"))]
 
     DATABASE_URL: str = "postgresql+asyncpg://postgres.lsikoutxslwhvytmijrf:Xcra1973dBBBB@aws-0-eu-west-3.pooler.supabase.com:6543/postgres"
     REDIS_URL: str = "redis://localhost:6379/0"
