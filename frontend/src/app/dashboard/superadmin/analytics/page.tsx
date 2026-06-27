@@ -1,13 +1,20 @@
 "use client";
+import { useQuery } from "@tanstack/react-query";
 import { BarChart3, TrendingUp, Users } from "lucide-react";
-
-const metrics = [
-  { label: "Active learners", value: "1,248", icon: Users },
-  { label: "Weekly growth", value: "+18%", icon: TrendingUp },
-  { label: "Course engagement", value: "84%", icon: BarChart3 },
-];
+import api from "@/lib/api";
 
 export default function SuperAdminAnalyticsPage() {
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["superadmin-stats"],
+    queryFn: async () => (await api.get("/analytics/admin")).data,
+  });
+
+  const metrics = [
+    { label: "Active learners", value: stats?.total_students ?? 0, icon: Users },
+    { label: "Weekly growth", value: `${stats?.recent_activity?.[0]?.trend ?? "+0%"}`, icon: TrendingUp },
+    { label: "Course engagement", value: `${stats?.active_enrollments ?? 0} active`, icon: BarChart3 },
+  ];
+
   return (
     <div className="min-h-full bg-[#03091A] p-6">
       <h1 className="mb-1 text-2xl font-black text-white">Analytics</h1>
@@ -19,7 +26,7 @@ export default function SuperAdminAnalyticsPage() {
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300">
               <Icon size={18} />
             </div>
-            <p className="text-2xl font-black text-white">{value}</p>
+            <p className="text-2xl font-black text-white">{isLoading ? "—" : value}</p>
             <p className="text-xs text-white/40">{label}</p>
           </div>
         ))}
@@ -30,11 +37,15 @@ export default function SuperAdminAnalyticsPage() {
         <div className="space-y-3 text-sm text-white/60">
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
             <span>Enrollment velocity</span>
-            <span className="font-semibold text-brand-300">+12 this week</span>
+            <span className="font-semibold text-brand-300">{stats?.recent_activity?.[0]?.trend ?? "Live"}</span>
           </div>
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
-            <span>Completion rate</span>
-            <span className="font-semibold text-emerald-300">78%</span>
+            <span>Pending reviews</span>
+            <span className="font-semibold text-emerald-300">{stats?.pending_reviews ?? 0}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
+            <span>Certificates issued</span>
+            <span className="font-semibold text-amber-300">{stats?.certificates_issued ?? 0}</span>
           </div>
         </div>
       </div>
