@@ -29,22 +29,6 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
         query_params["ssl"] = query_params.pop("sslmode")
 
     host = parsed.hostname or ""
-    if host.endswith(".pooler.supabase.com"):
-        username = parsed.username or ""
-        project_ref = username.split(".", 1)[1] if "." in username else ""
-        if project_ref:
-            host = f"{project_ref}.supabase.co"
-        else:
-            host = host.replace(".pooler.supabase.com", ".supabase.co")
-
-        userinfo = ""
-        if parsed.username:
-            userinfo = parsed.username
-            if parsed.password is not None:
-                userinfo = f"{userinfo}:{parsed.password}"
-            userinfo = f"{userinfo}@"
-        netloc = f"{userinfo}{host}:5432"
-        parsed = parsed._replace(netloc=netloc)
 
     if "ssl" in query_params:
         ssl_value = query_params.pop("ssl")
@@ -55,7 +39,7 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
         else:
             connect_args["ssl"] = ssl_value
     elif host and (
-        host.endswith("supabase.co") or host.endswith("supabase.com") or ".pooler.supabase.com" in host
+        host.endswith("supabase.co") or host.endswith("supabase.com") or host.endswith(".pooler.supabase.com")
     ):
         connect_args["ssl"] = True
 
