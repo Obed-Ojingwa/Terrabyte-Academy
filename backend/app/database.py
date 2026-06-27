@@ -36,6 +36,7 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
             host = f"db.{project_ref}.supabase.co"
         else:
             host = host.replace(".pooler.supabase.com", ".supabase.co")
+            
 
         userinfo = ""
         if parsed.username:
