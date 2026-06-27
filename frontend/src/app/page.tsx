@@ -5,10 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 
-// ── Logo imports ──────────────────────────────────────────────────────────────
-import servicesLogo from "./public/terrabyte_academy_logo.png";
+import BrandLogo from "@/components/ui/BrandLogo";
 import academyLogo  from "./public/terrabyte_services_logo.png";
-// ─────────────────────────────────────────────────────────────────────────────
 
 const heroSlides = [
   { id: 1, src: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1400&q=80&auto=format&fit=crop", alt: "Developer coding" },
@@ -140,20 +138,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-5 md:px-10 flex items-center justify-between h-16">
 
           {/* ── HEADER LOGO ── */}
-          <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <Image
-              src={servicesLogo}
-              alt="Terrabyte Services"
-              height={36}
-              className="w-auto h-9 object-contain"
-              priority
-            />
-            {/* Where initial logo was, now empty */}
-            <div className="leading-tight">
-              <div className="font-black text-gray-900 text-sm"></div>
-              <div className="text-blue-600 font-bold text-[10px] tracking-wider"></div>
-            </div>
-          </Link>
+          <BrandLogo className="flex-shrink-0" />
 
           <div className="hidden md:flex items-center gap-7 text-sm text-gray-500">
             {navLinks.map((l) => (<Link key={l.href} href={l.href} className="hover:text-blue-600 transition-colors font-medium">{l.label}</Link>))}

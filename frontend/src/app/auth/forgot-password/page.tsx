@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import BrandLogo from "@/components/ui/BrandLogo";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 
@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[#03091A] flex items-center justify-center px-6">
       <div className="relative w-full max-w-md">
         <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center font-black text-white">T</div><span className="font-bold text-white text-lg">Terrabyte Academy</span></Link>
+          <BrandLogo className="mb-8" />
           <h1 className="text-2xl font-black text-white tracking-tight">Reset your password</h1>
           <p className="text-white/40 text-sm mt-2">We&apos;ll send a reset link to your email</p>
         </div>

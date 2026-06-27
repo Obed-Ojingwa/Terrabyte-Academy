@@ -2,6 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import BrandLogo from "@/components/ui/BrandLogo";
 import Link from "next/link";
 import { useRegister } from "@/hooks/useAuth";
 
@@ -17,10 +18,7 @@ export default function RegisterPage() {
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#378add 1px,transparent 1px),linear-gradient(90deg,#378add 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
       <div className="relative w-full max-w-lg">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center font-black text-base text-white">T</div>
-            <span className="font-bold text-white text-lg">Terrabyte Academy</span>
-          </Link>
+          <BrandLogo className="mb-8" />
           <h1 className="text-3xl font-black text-white tracking-tight">Create your account</h1>
           <p className="text-white/40 text-sm mt-2">Join 2,400+ students already learning</p>
         </div>

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { useLogin } from "@/hooks/useAuth";
 import { useState } from "react";
 
@@ -20,8 +21,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-900 to-[#03091A]" />
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#378add 1px,transparent 1px),linear-gradient(90deg,#378add 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
         <div className="relative flex items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-black text-white">T</div>
-          <span className="font-bold text-white text-lg">Terrabyte <span className="text-brand-300">Academy</span></span>
+          <BrandLogo />
         </div>
         <div className="relative z-10">
           <div className="text-6xl text-brand-700/50 font-serif leading-none mb-3">&ldquo;</div>
@@ -40,8 +40,7 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-6 py-16 bg-[#040d1c]">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center font-black text-sm text-white">T</div>
-            <span className="font-bold text-white text-lg">Terrabyte Academy</span>
+            <BrandLogo />
           </div>
           <h1 className="text-3xl font-black text-white mb-1 tracking-tight">Welcome back</h1>
           <p className="text-white/40 text-sm mb-10">Sign in to continue your learning journey</p>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, Settings, LogOut, BarChart2, Upload, CheckSquare, Newspaper, Calendar, User } from "lucide-react";
 
 const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
@@ -52,13 +53,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-[#020a16] flex flex-col h-full shrink-0 border-r border-white/[0.05]">
       <div className="p-5 border-b border-white/[0.05]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-black text-base text-white">T</div>
-          <div>
-            <p className="font-bold text-white text-sm leading-tight">Terrabyte</p>
-            <p className="text-white/30 text-xs">Academy</p>
-          </div>
-        </div>
+        <BrandLogo />
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <p className="text-[10px] text-white/25 px-3 py-2 uppercase tracking-[0.12em] font-semibold mb-1">{role.replace("_", " ")}</p>
