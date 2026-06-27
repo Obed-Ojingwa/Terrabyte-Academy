@@ -32,7 +32,7 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
 
     if "ssl" in query_params:
         ssl_value = query_params.pop("ssl")
-        if isinstance(ssl_value, str) and ssl_value.lower() in {"true", "1", "yes", "require"}:
+        if isinstance(ssl_value, str) and ssl_value.lower() in {"true", "1", "yes"}:
             connect_args["ssl"] = True
         elif isinstance(ssl_value, str) and ssl_value.lower() in {"false", "0", "no", "disable"}:
             connect_args["ssl"] = False
@@ -41,7 +41,7 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
     elif host and (
         host.endswith("supabase.co") or host.endswith("supabase.com") or host.endswith(".pooler.supabase.com")
     ):
-        connect_args["ssl"] = True
+        connect_args["ssl"] = "require"
 
     normalized_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query_params), parsed.fragment))
     return {"database_url": normalized_url, "connect_args": connect_args}
