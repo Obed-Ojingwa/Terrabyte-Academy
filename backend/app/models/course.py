@@ -63,3 +63,9 @@ class Material(Base):
     size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     lesson: Mapped["Lesson"] = relationship(back_populates="materials")
+
+    @property
+    def url(self) -> str:
+        from app.services.storage_service import StorageService
+
+        return StorageService().get_public_url(self.s3_key)

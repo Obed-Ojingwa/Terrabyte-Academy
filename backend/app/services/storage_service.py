@@ -50,4 +50,6 @@ class StorageService:
     def get_public_url(self, key: str) -> str:
         if self.endpoint_url and self.bucket:
             return f"{self.endpoint_url.rstrip('/')}/{self.bucket}/{key}"
+        if self.bucket and self.region:
+            return f"https://{self.bucket}.s3.{self.region}.amazonaws.com/{key}"
         return key

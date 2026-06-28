@@ -40,6 +40,17 @@ export interface Module {
   lessons: Lesson[];
 }
 
+export interface Material {
+  id: string;
+  title: string;
+  type: string;
+  s3_key: string;
+  url: string;
+  is_downloadable: boolean;
+  size_bytes?: number;
+  created_at: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -47,4 +58,5 @@ export interface Lesson {
   duration_min?: number;
   is_preview: boolean;
   is_completed?: boolean;
+  materials?: Material[];
 }

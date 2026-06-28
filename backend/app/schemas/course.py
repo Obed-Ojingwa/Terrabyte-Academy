@@ -20,6 +20,7 @@ class CourseLessonSummary(BaseModel):
     duration_min: Optional[int] = None
     is_preview: bool = False
     is_completed: bool = False
+    materials: List[MaterialResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -53,6 +54,20 @@ class CourseUpdate(BaseModel):
     level: Optional[str] = None
     duration_weeks: Optional[int] = None
     is_published: Optional[bool] = None
+
+
+class MaterialResponse(BaseModel):
+    id: UUID
+    lesson_id: UUID
+    title: str
+    type: str
+    s3_key: str
+    url: str
+    is_downloadable: bool
+    size_bytes: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CourseResponse(BaseModel):
@@ -118,6 +133,7 @@ class LessonResponse(BaseModel):
     position: int
     duration_min: Optional[int] = None
     is_preview: bool
+    materials: List[MaterialResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

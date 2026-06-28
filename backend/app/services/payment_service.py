@@ -25,10 +25,12 @@ class PaymentService:
 
     def build_payment_payload(self, course_id: str, mode: str, user_id: str, email: str, amount: int):
         reference = f"TBA-{uuid.uuid4().hex[:12].upper()}"
+        callback_url = f"{settings.BACKEND_BASE_URL.rstrip('/')}/api/v1/payments/callback"
         return {
             "email": email,
             "amount": int(amount * 100),
             "reference": reference,
+            "callback_url": callback_url,
             "metadata": {"course_id": str(course_id), "student_id": str(user_id), "mode": mode},
         }
 

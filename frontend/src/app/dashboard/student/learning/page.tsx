@@ -157,6 +157,25 @@ export default function StudentLearningPage() {
                     <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 whitespace-pre-wrap">
                       {selectedLessonData.content || "Lesson content will appear here when the tutor adds it to the course."}
                     </div>
+                    {selectedLessonData.materials?.length ? (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="mb-3 flex items-center justify-between gap-2 text-sm font-semibold text-slate-950">
+                          <span>Lesson materials</span>
+                          <span className="text-xs text-slate-500">{selectedLessonData.materials.length} file(s)</span>
+                        </div>
+                        <div className="space-y-2">
+                          {selectedLessonData.materials.map((material: any) => (
+                            <a key={material.id} href={material.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                              <div>
+                                <div className="font-semibold text-slate-950">{material.title}</div>
+                                <div className="mt-1 text-xs text-slate-500">{material.type} • {material.size_bytes ? `${Math.round(material.size_bytes / 1024)} KB` : "Size unknown"}</div>
+                              </div>
+                              <span className="text-brand-600">View</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                     <button onClick={() => progressMutation.mutate({ enrollmentId: selectedCourse.id, lessonId: selectedLessonData.id })} disabled={progressMutation.isPending} className="rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300">
                       {selectedLessonData.is_completed ? "Revisit lesson" : "Complete lesson"}
                     </button>

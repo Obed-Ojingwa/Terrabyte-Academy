@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
-import { BookOpen, Layers, PlayCircle, Plus, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Layers, PlayCircle, Plus, Pencil, Trash2, DownloadCloud } from "lucide-react";
+import MediaUploader from "@/components/uploads/MediaUploader";
 
 export default function TutorCoursesPage() {
   const queryClient = useQueryClient();
@@ -67,6 +68,15 @@ export default function TutorCoursesPage() {
     onError: () => toast.error("Unable to remove lesson"),
   });
 
+  const deleteMaterialMutation = useMutation({
+    mutationFn: async ({ lessonId, materialId }: { lessonId: string; materialId: string }) => api.delete(`/lesson-materials/${lessonId}/${materialId}`),
+    onSuccess: () => {
+      toast.success("Material removed");
+      refetchModules();
+    },
+    onError: () => toast.error("Unable to remove material"),
+  });
+
   const courses = useMemo(() => coursesData ?? [], [coursesData]);
 
   return (
@@ -121,14 +131,48 @@ export default function TutorCoursesPage() {
                   </div>
                   <div className="mt-2 space-y-2">
                     {(module.lessons ?? []).map((lesson: any) => (
-                      <div key={lesson.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <PlayCircle size={14} className="text-brand-400" />
-                          <span>{lesson.title}</span>
+                      <div key={lesson.id} className="rounded-2xl border border-slate-200 bg-white p-3">
+                        <div className="flex items-center justify-between gap-2 text-sm text-slate-700">
+                          <div className="flex items-center gap-2">
+                            <PlayCircle size={14} className="text-brand-400" />
+                            <span>{lesson.title}</span>
+                          </div>
+                          <button onClick={() => selectedCourseId && deleteLessonMutation.mutate({ courseId: selectedCourseId, moduleId: module.id, lessonId: lesson.id })} className="text-red-600">
+                            <Trash2 size={13} />
+                          </button>
                         </div>
-                        <button onClick={() => selectedCourseId && deleteLessonMutation.mutate({ courseId: selectedCourseId, moduleId: module.id, lessonId: lesson.id })} className="text-red-600">
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="mt-3 space-y-3">
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                            <div className="mb-2 flex items-center justify-between gap-2 text-xs uppercase tracking-wide text-slate-500">
+                              <span>Materials</span>
+                              <span>{lesson.materials?.length ?? 0} files</span>
+                            </div>
+                            {(lesson.materials ?? []).length ? (
+                              <div className="space-y-2">
+                                {lesson.materials.map((material: any) => (
+                                  <div key={material.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                                    <a href={material.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-brand-600 hover:text-brand-800">
+                                      <DownloadCloud size={14} />
+                                      <span>{material.title}</span>
+                                    </a>
+                                    <button onClick={() => deleteMaterialMutation.mutate({ lessonId: lesson.id, materialId: material.id })} className="text-red-600 text-xs">
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-500">No lesson materials yet.</p>
+                            )}
+                          </div>
+                          <MediaUploader
+                            label="Upload lesson material"
+                            accept="*/*"
+                            uploadUrl={`/lesson-materials/${lesson.id}`}
+                            extraFormFields={{ title: lesson.title, is_downloadable: "true" }}
+                            onUploaded={() => refetchModules()}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

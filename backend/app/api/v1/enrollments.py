@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.enrollment import Enrollment, LessonProgress
-from app.models.course import Course, Module
+from app.models.course import Course, Module, Lesson
 from app.models.payment import Payment
 from app.schemas.lms import EnrollmentCreate, EnrollmentResponse, EnrollmentUpdate, LessonProgressResponse
 
@@ -56,7 +56,10 @@ async def list_enrollments(
 ):
     query = (
         select(Enrollment)
-        .options(joinedload(Enrollment.student), joinedload(Enrollment.course).joinedload(Course.modules).joinedload(Module.lessons))
+        .options(
+            joinedload(Enrollment.student),
+            joinedload(Enrollment.course).joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials),
+        )
     )
     if current_user.role.name not in {"super_admin", "admin"}:
         query = query.where(Enrollment.student_id == current_user.id)
@@ -74,7 +77,10 @@ async def list_enrollments(
 async def get_enrollment(enrollment_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Enrollment)
-        .options(joinedload(Enrollment.student), joinedload(Enrollment.course).joinedload(Course.modules).joinedload(Module.lessons))
+        .options(
+            joinedload(Enrollment.student),
+            joinedload(Enrollment.course).joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials),
+        )
         .where(Enrollment.id == enrollment_id)
     )
     enrollment = result.scalar_one_or_none()

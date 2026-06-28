@@ -7,10 +7,12 @@ import { toast } from "react-hot-toast";
 interface Props {
   label: string;
   accept?: string;
+  uploadUrl?: string;
+  extraFormFields?: Record<string, string>;
   onUploaded?: (url: string, key: string) => void;
 }
 
-export default function MediaUploader({ label, accept = "image/*", onUploaded }: Props) {
+export default function MediaUploader({ label, accept = "image/*", uploadUrl = "/storage/upload", extraFormFields = {}, onUploaded }: Props) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -21,9 +23,10 @@ export default function MediaUploader({ label, accept = "image/*", onUploaded }:
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
+    Object.entries(extraFormFields).forEach(([key, value]) => formData.append(key, value));
 
     try {
-      const { data } = await api.post("/storage/upload", formData, {
+      const { data } = await api.post(uploadUrl, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setPreview(data.url);

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user
 from app.models.course import Course, Module, Lesson
@@ -25,7 +26,12 @@ async def list_modules(course_id: str, db: AsyncSession = Depends(get_db), curre
     course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    result = await db.execute(select(Module).where(Module.course_id == course_id).order_by(Module.position))
+    result = await db.execute(
+        select(Module)
+        .options(joinedload(Module.lessons).joinedload(Lesson.materials))
+        .where(Module.course_id == course_id)
+        .order_by(Module.position)
+    )
     modules = result.scalars().all()
     return [ModuleResponse.model_validate(module) for module in modules]
 

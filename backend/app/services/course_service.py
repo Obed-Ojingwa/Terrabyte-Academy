@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
-from app.models.course import Course, Module
+from app.models.course import Course, Module, Lesson
 from app.models.enrollment import Enrollment
 from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
 from app.core.cache import TTLCache
@@ -28,7 +28,7 @@ class CourseService:
 
         base_query = (
             select(Course)
-            .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons))
+            .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials))
             .where(Course.is_published == True)
         )
         if search:
@@ -91,7 +91,7 @@ class CourseService:
     async def get_course(self, course_id: str) -> CourseResponse:
         result = await self.db.execute(
             select(Course)
-            .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons))
+            .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials))
             .where(Course.id == course_id)
         )
         course = result.scalar_one_or_none()
