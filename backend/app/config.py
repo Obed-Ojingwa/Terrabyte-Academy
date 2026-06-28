@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Terrabyte Academy"
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,http://localhost:3000"
-    TRUSTED_HOSTS: str = "localhost,127.0.0.1"
+    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,https://terrabyte-academy.onrender.com,http://localhost:3000"
+    TRUSTED_HOSTS: str = "localhost,127.0.0.1,terrabyte-acad.vercel.app,terrabyte-academy.onrender.com"
     LOG_LEVEL: str = "INFO"
 
     @property
@@ -73,8 +73,8 @@ class Settings(BaseSettings):
 
     PAYSTACK_SECRET_KEY: str = ""
     PAYSTACK_PUBLIC_KEY: str = ""
-    BACKEND_BASE_URL: str = "http://localhost:8000"
-    FRONTEND_BASE_URL: str = "http://localhost:3000"
+    BACKEND_BASE_URL: str = "https://terrabyte-academy.onrender.com"
+    FRONTEND_BASE_URL: str = "https://terrabyte-acad.vercel.app"
 
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
