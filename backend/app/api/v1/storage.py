@@ -19,6 +19,8 @@ async def upload_file(
     try:
         contents = await file.read()
         storage.upload_file(key, contents, file.content_type)
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail="Unable to upload file") from exc
     return {"key": key, "url": storage.get_public_url(key)}

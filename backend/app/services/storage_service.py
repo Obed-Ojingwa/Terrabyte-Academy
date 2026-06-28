@@ -38,7 +38,7 @@ class StorageService:
 
     def upload_file(self, file_name: str, file_obj: BinaryIO, content_type: str | None = None) -> str:
         if not self.client:
-            raise HTTPException(status_code=500, detail="Object storage is not configured")
+            raise HTTPException(status_code=503, detail="Object storage is not configured")
         self.client.put_object(
             Bucket=self.bucket,
             Key=file_name,

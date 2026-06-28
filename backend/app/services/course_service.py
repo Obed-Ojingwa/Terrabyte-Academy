@@ -53,6 +53,17 @@ class CourseService:
         self._cache.set(cache_key, response)
         return response
 
+    async def list_manageable_courses(self, user) -> list[CourseResponse]:
+        role_name = user.role.name if getattr(user, "role", None) else None
+        query = select(Course).options(joinedload(Course.tutor))
+        if role_name == "tutor":
+            query = query.where(Course.tutor_id == user.id)
+        elif role_name not in {"super_admin", "admin"}:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        result = await self.db.execute(query.order_by(Course.created_at.desc()))
+        courses = result.scalars().all()
+        return [CourseResponse.model_validate(course) for course in courses]
+
     async def list_popular_courses(self, limit: int = 6) -> list[CourseResponse]:
         popular_query = (
             select(Course)
