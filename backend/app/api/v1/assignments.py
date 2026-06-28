@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin, require_tutor
@@ -13,8 +13,13 @@ router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
 
 async def _student_can_access_assignment(current_user, assignment: Assignment, db: AsyncSession) -> bool:
-    if current_user.role.name in {"super_admin", "admin", "tutor"}:
+    role_name = current_user.role.name
+    if role_name in {"super_admin", "admin"}:
         return True
+    if role_name == "tutor":
+        course_result = await db.execute(select(Course).where(Course.id == assignment.course_id))
+        course = course_result.scalar_one_or_none()
+        return assignment.tutor_id == current_user.id or (course and course.tutor_id == current_user.id)
     if assignment.tutor_id and assignment.tutor_id == current_user.id:
         return True
     enrollment_result = await db.execute(
@@ -36,7 +41,10 @@ async def list_assignments(
     query = select(Assignment).options(joinedload(Assignment.course), joinedload(Assignment.tutor))
     if course_id:
         query = query.where(Assignment.course_id == course_id)
-    if current_user.role.name not in {"super_admin", "admin", "tutor"}:
+    role_name = current_user.role.name
+    if role_name == "tutor":
+        query = query.where(or_(Assignment.tutor_id == current_user.id, Course.tutor_id == current_user.id))
+    elif role_name not in {"super_admin", "admin"}:
         enrolled_courses = (
             await db.execute(
                 select(Enrollment.course_id).where(
@@ -75,10 +83,24 @@ async def create_assignment(
     db: AsyncSession = Depends(get_db),
 ):
     course_result = await db.execute(select(Course).where(Course.id == payload.course_id))
-    if not course_result.scalar_one_or_none():
+    course = course_result.scalar_one_or_none()
+    if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    assignment = Assignment(**payload.model_dump(), tutor_id=payload.tutor_id or current_user.id)
+    role_name = current_user.role.name
+    if role_name not in {"super_admin", "admin"}:
+        if role_name != "tutor":
+            raise HTTPException(status_code=403, detail="Not authorized")
+        if course.tutor_id is not None and course.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        if payload.tutor_id is not None and payload.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        tutor_id = current_user.id
+    else:
+        tutor_id = payload.tutor_id
+
+    assignment_data = payload.model_dump(exclude={"tutor_id"})
+    assignment = Assignment(**assignment_data, tutor_id=tutor_id)
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
@@ -96,6 +118,13 @@ async def update_assignment(
     assignment = result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+
+    role_name = current_user.role.name
+    if role_name not in {"super_admin", "admin"}:
+        course_result = await db.execute(select(Course).where(Course.id == assignment.course_id))
+        course = course_result.scalar_one_or_none()
+        if assignment.tutor_id != current_user.id and (not course or course.tutor_id != current_user.id):
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(assignment, field, value)
@@ -144,6 +173,18 @@ async def review_submission(
     ).scalar_one_or_none()
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
+
+    assignment_result = await db.execute(select(Assignment).where(Assignment.id == assignment_id))
+    assignment = assignment_result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    role_name = current_user.role.name
+    if role_name not in {"super_admin", "admin"}:
+        course_result = await db.execute(select(Course).where(Course.id == assignment.course_id))
+        course = course_result.scalar_one_or_none()
+        if assignment.tutor_id != current_user.id and (not course or course.tutor_id != current_user.id):
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     submission.score = payload.score
     submission.feedback = payload.feedback

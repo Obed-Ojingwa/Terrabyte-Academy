@@ -106,6 +106,9 @@ class CourseService:
         course = result.scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
+        if user.role.name not in {"super_admin", "admin"}:
+            if user.role.name != "tutor" or course.tutor_id != user.id:
+                raise HTTPException(status_code=403, detail="Not authorized")
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(course, field, value)
         await self.db.commit()

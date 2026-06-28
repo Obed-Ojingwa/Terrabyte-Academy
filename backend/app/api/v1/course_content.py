@@ -2,15 +2,26 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
-from app.api.deps import require_manage_courses
+from app.api.deps import get_current_user
 from app.models.course import Course, Module, Lesson
 from app.schemas.course import ModuleCreate, ModuleResponse, ModuleUpdate, LessonCreate, LessonResponse, LessonUpdate
 
 router = APIRouter(prefix="/courses", tags=["Course Content"])
 
 
+async def require_course_manager(course_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if current_user.role.name in {"super_admin", "admin"}:
+        return current_user
+    if current_user.role.name != "tutor" or course.tutor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return current_user
+
+
 @router.get("/{course_id}/modules", response_model=list[ModuleResponse])
-async def list_modules(course_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def list_modules(course_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -20,7 +31,7 @@ async def list_modules(course_id: str, db: AsyncSession = Depends(get_db), curre
 
 
 @router.post("/{course_id}/modules", response_model=ModuleResponse, status_code=201)
-async def create_module(course_id: str, payload: ModuleCreate, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def create_module(course_id: str, payload: ModuleCreate, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -32,7 +43,7 @@ async def create_module(course_id: str, payload: ModuleCreate, db: AsyncSession 
 
 
 @router.put("/{course_id}/modules/{module_id}", response_model=ModuleResponse)
-async def update_module(course_id: str, module_id: str, payload: ModuleUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def update_module(course_id: str, module_id: str, payload: ModuleUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     module = (await db.execute(select(Module).where(Module.id == module_id, Module.course_id == course_id))).scalar_one_or_none()
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
@@ -44,7 +55,7 @@ async def update_module(course_id: str, module_id: str, payload: ModuleUpdate, d
 
 
 @router.delete("/{course_id}/modules/{module_id}", status_code=204)
-async def delete_module(course_id: str, module_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def delete_module(course_id: str, module_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     module = (await db.execute(select(Module).where(Module.id == module_id, Module.course_id == course_id))).scalar_one_or_none()
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
@@ -53,7 +64,7 @@ async def delete_module(course_id: str, module_id: str, db: AsyncSession = Depen
 
 
 @router.post("/{course_id}/modules/{module_id}/lessons", response_model=LessonResponse, status_code=201)
-async def create_lesson(course_id: str, module_id: str, payload: LessonCreate, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def create_lesson(course_id: str, module_id: str, payload: LessonCreate, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     module = (await db.execute(select(Module).where(Module.id == module_id, Module.course_id == course_id))).scalar_one_or_none()
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
@@ -65,7 +76,7 @@ async def create_lesson(course_id: str, module_id: str, payload: LessonCreate, d
 
 
 @router.put("/{course_id}/modules/{module_id}/lessons/{lesson_id}", response_model=LessonResponse)
-async def update_lesson(course_id: str, module_id: str, lesson_id: str, payload: LessonUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def update_lesson(course_id: str, module_id: str, lesson_id: str, payload: LessonUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     lesson = (await db.execute(select(Lesson).where(Lesson.id == lesson_id, Lesson.module_id == module_id))).scalar_one_or_none()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
@@ -77,7 +88,7 @@ async def update_lesson(course_id: str, module_id: str, lesson_id: str, payload:
 
 
 @router.delete("/{course_id}/modules/{module_id}/lessons/{lesson_id}", status_code=204)
-async def delete_lesson(course_id: str, module_id: str, lesson_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_manage_courses)):
+async def delete_lesson(course_id: str, module_id: str, lesson_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_course_manager)):
     lesson = (await db.execute(select(Lesson).where(Lesson.id == lesson_id, Lesson.module_id == module_id))).scalar_one_or_none()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")

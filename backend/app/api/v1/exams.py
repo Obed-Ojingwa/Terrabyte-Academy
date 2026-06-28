@@ -20,7 +20,10 @@ async def list_exams(
     query = select(Exam)
     if course_id:
         query = query.where(Exam.course_id == course_id)
-    if current_user.role.name not in {"super_admin", "admin", "tutor"}:
+    role_name = current_user.role.name
+    if role_name == "tutor":
+        query = query.join(Course, Course.id == Exam.course_id).where(Course.tutor_id == current_user.id)
+    elif role_name not in {"super_admin", "admin"}:
         enrolled_courses = (
             await db.execute(
                 select(Enrollment.course_id).where(
@@ -43,7 +46,13 @@ async def get_exam(exam_id: str, current_user=Depends(get_current_user), db: Asy
     exam = result.scalar_one_or_none()
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
-    if current_user.role.name not in {"super_admin", "admin", "tutor"}:
+    role_name = current_user.role.name
+    if role_name == "tutor":
+        course_result = await db.execute(select(Course).where(Course.id == exam.course_id))
+        course = course_result.scalar_one_or_none()
+        if not course or course.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif role_name not in {"super_admin", "admin"}:
         enrollment_result = await db.execute(
             select(Enrollment).where(
                 Enrollment.student_id == current_user.id,
@@ -59,8 +68,14 @@ async def get_exam(exam_id: str, current_user=Depends(get_current_user), db: Asy
 @router.post("/", response_model=ExamResponse, status_code=201)
 async def create_exam(payload: ExamCreate, current_user=Depends(require_tutor), db: AsyncSession = Depends(get_db)):
     course_result = await db.execute(select(Course).where(Course.id == payload.course_id))
-    if not course_result.scalar_one_or_none():
+    course = course_result.scalar_one_or_none()
+    if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+
+    role_name = current_user.role.name
+    if role_name not in {"super_admin", "admin"}:
+        if role_name != "tutor" or course.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     exam = Exam(**payload.model_dump())
     db.add(exam)
@@ -75,6 +90,13 @@ async def update_exam(exam_id: str, payload: ExamUpdate, current_user=Depends(re
     exam = result.scalar_one_or_none()
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
+
+    role_name = current_user.role.name
+    if role_name not in {"super_admin", "admin"}:
+        course_result = await db.execute(select(Course).where(Course.id == exam.course_id))
+        course = course_result.scalar_one_or_none()
+        if role_name != "tutor" or not course or course.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(exam, field, value)
