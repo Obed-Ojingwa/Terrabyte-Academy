@@ -110,8 +110,8 @@ export default function StudentProfilePage() {
             </label>
           </div>
 
-          <button type="submit" disabled={updateMutation.isLoading} className="inline-flex items-center justify-center rounded-3xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300">
-            {updateMutation.isLoading ? "Saving..." : "Save changes"}
+          <button type="submit" disabled={updateMutation.isPending} className="inline-flex items-center justify-center rounded-3xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300">
+            {updateMutation.isPending ? "Saving..." : "Save changes"}
           </button>
         </form>
       </div>
