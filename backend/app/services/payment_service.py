@@ -140,12 +140,14 @@ class PaymentService:
 
     async def handle_webhook(self, request: Request):
         body = await request.body()
-        signature = request.headers.get("x-paystack-signature", "")
+        signature = request.headers.get("x-paystack-signature")
         if not settings.PAYSTACK_SECRET_KEY:
             return {"status": "skipped", "message": "Webhook skipped because credentials are not configured."}
+        if not signature:
+            raise HTTPException(status_code=400, detail="Missing or invalid webhook signature")
         expected = hmac.new(settings.PAYSTACK_SECRET_KEY.encode(), body, hashlib.sha512).hexdigest()
         if not hmac.compare_digest(signature, expected):
-            raise HTTPException(status_code=400, detail="Invalid webhook signature")
+            raise HTTPException(status_code=400, detail="Missing or invalid webhook signature")
 
         payload = await request.json()
         event = payload.get("event")

@@ -18,13 +18,19 @@ class StorageService:
     def __init__(self):
         self.endpoint_url = getattr(settings, "S3_ENDPOINT_URL", "") or None
         self.bucket = getattr(settings, "S3_BUCKET_NAME", "") or settings.AWS_BUCKET
-        self.access_key = getattr(settings, "S3_ACCESS_KEY", "") or settings.AWS_ACCESS_KEY
-        self.secret_key = getattr(settings, "S3_SECRET_KEY", "") or settings.AWS_SECRET_KEY
+        if self.endpoint_url:
+            self.access_key = getattr(settings, "S3_ACCESS_KEY", "") or ""
+            self.secret_key = getattr(settings, "S3_SECRET_KEY", "") or ""
+        else:
+            self.access_key = getattr(settings, "S3_ACCESS_KEY", "") or settings.AWS_ACCESS_KEY
+            self.secret_key = getattr(settings, "S3_SECRET_KEY", "") or settings.AWS_SECRET_KEY
         self.region = getattr(settings, "S3_REGION", "") or settings.AWS_REGION
         self.client = self._build_client()
 
     def _build_client(self):
         if not self.access_key or not self.secret_key:
+            if self.endpoint_url:
+                raise HTTPException(status_code=503, detail="Object storage endpoint is configured but credentials are missing")
             return None
         config = Config(signature_version="s3v4")
         return boto3.client(
@@ -39,6 +45,8 @@ class StorageService:
     def upload_file(self, file_name: str, file_obj: BinaryIO, content_type: str | None = None) -> str:
         if not self.client:
             raise HTTPException(status_code=503, detail="Object storage is not configured")
+        if not self.bucket:
+            raise HTTPException(status_code=503, detail="Object storage bucket is not configured")
         self.client.put_object(
             Bucket=self.bucket,
             Key=file_name,
@@ -48,7 +56,9 @@ class StorageService:
         return file_name
 
     def get_public_url(self, key: str) -> str:
-        if self.endpoint_url and self.bucket:
+        if self.endpoint_url:
+            if not self.bucket:
+                raise HTTPException(status_code=503, detail="Object storage bucket is not configured")
             return f"{self.endpoint_url.rstrip('/')}/{self.bucket}/{key}"
         if self.bucket and self.region:
             return f"https://{self.bucket}.s3.{self.region}.amazonaws.com/{key}"

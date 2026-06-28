@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,http://localhost:3000"
+    TRUSTED_HOSTS: str = "localhost,127.0.0.1"
+    LOG_LEVEL: str = "INFO"
 
     @property
     def allowed_origins_list(self) -> List[str]:
@@ -30,6 +32,25 @@ class Settings(BaseSettings):
                 pass
 
         return [item.strip() for item in value.split(",") if item.strip() and item.strip().startswith(("http://", "https://"))]
+
+    @property
+    def trusted_hosts(self) -> List[str]:
+        if not self.TRUSTED_HOSTS:
+            return ["localhost", "127.0.0.1"]
+
+        value = str(self.TRUSTED_HOSTS).strip()
+        if not value:
+            return ["localhost", "127.0.0.1"]
+
+        if value.startswith("["):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return [str(item).strip() for item in parsed if str(item).strip()]
+            except json.JSONDecodeError:
+                pass
+
+        return [item.strip() for item in value.split(",") if item.strip()]
 
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
     REDIS_URL: str = "redis://localhost:6379/0"

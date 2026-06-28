@@ -13,6 +13,20 @@ class CourseTutorSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MaterialResponse(BaseModel):
+    id: UUID
+    lesson_id: UUID
+    title: str
+    type: str
+    s3_key: str
+    url: str
+    is_downloadable: bool
+    size_bytes: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CourseLessonSummary(BaseModel):
     id: UUID
     title: str

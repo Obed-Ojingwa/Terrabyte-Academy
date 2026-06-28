@@ -72,7 +72,6 @@ async def upload_lesson_material(
     )
 
 
-from app.schemas.course import MaterialResponse, MaterialUpdate
 
 
 @router.put("/{lesson_id}/{material_id}", response_model=MaterialResponse)

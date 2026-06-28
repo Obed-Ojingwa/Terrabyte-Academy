@@ -1,6 +1,9 @@
+import logging
 import time
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+
+logger = logging.getLogger("app.middleware")
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -25,5 +28,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 class VisitorLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "unknown"
         response = await call_next(request)
+        logger.info(
+            "%s %s %s %s",
+            client_ip,
+            request.method,
+            request.url.path,
+            response.status_code,
+        )
         return response
