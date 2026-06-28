@@ -5,6 +5,7 @@ import bcrypt
 from app.config import settings
 
 _REVOKED_TOKENS: set[str] = set()
+_REVOKED_TOKEN_IDS: set[str] = set()
 
 
 def hash_password(password: str) -> str:
@@ -13,6 +14,14 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
+
+
+def _get_token_id(token: str) -> str | None:
+    try:
+        claims = jwt.decode(token, options={"verify_signature": False})
+        return claims.get("jti")
+    except jwt.InvalidTokenError:
+        return None
 
 
 def create_access_token(user_id: str, role: str, *, token_id: str | None = None) -> str:
@@ -40,11 +49,17 @@ def create_refresh_token(user_id: str, *, token_id: str | None = None) -> str:
 
 
 def revoke_token(token: str) -> None:
+    token_id = _get_token_id(token)
+    if token_id:
+        _REVOKED_TOKEN_IDS.add(token_id)
     _REVOKED_TOKENS.add(token)
 
 
 def is_token_revoked(token: str) -> bool:
-    return token in _REVOKED_TOKENS
+    if token in _REVOKED_TOKENS:
+        return True
+    token_id = _get_token_id(token)
+    return bool(token_id and token_id in _REVOKED_TOKEN_IDS)
 
 
 def decode_token(token: str) -> dict:

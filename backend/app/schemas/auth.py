@@ -35,6 +35,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UserUpdateRequest(BaseModel):
+    first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str

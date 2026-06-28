@@ -9,6 +9,12 @@ from app.config import settings
 
 
 class StorageService:
+    """Uses S3-compatible object storage.
+
+    This supports AWS S3 or other S3-compatible providers such as Supabase Storage when
+    `S3_ENDPOINT_URL`, `S3_ACCESS_KEY`, and `S3_SECRET_KEY` are configured.
+    """
+
     def __init__(self):
         self.endpoint_url = getattr(settings, "S3_ENDPOINT_URL", "") or None
         self.bucket = getattr(settings, "S3_BUCKET_NAME", "") or settings.AWS_BUCKET

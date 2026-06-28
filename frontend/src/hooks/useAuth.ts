@@ -31,5 +31,10 @@ export function useRegister() {
 export function useLogout() {
   const { logout } = useAuthStore();
   const router = useRouter();
-  return () => { logout(); router.push("/auth/login"); toast.success("Signed out"); };
+  return () => {
+    api.post("/auth/logout").catch(() => undefined);
+    logout();
+    router.push("/auth/login");
+    toast.success("Signed out");
+  };
 }

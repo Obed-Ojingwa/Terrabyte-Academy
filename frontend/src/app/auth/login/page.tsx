@@ -43,15 +43,15 @@ export default function LoginPage() {
             <BrandLogo />
           </div>
           <h1 className="text-3xl font-black text-white mb-1 tracking-tight">Welcome back</h1>
-          <p className="text-white/40 text-sm mb-10">Sign in to continue your learning journey</p>
+          <p className="text-white/70 text-sm mb-10">Sign in to continue your learning journey</p>
           <form onSubmit={handleSubmit((d) => login(d))} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-white/40 uppercase tracking-widest mb-2">Email Address</label>
+              <label className="block text-xs font-semibold text-white/70 uppercase tracking-widest mb-2">Email Address</label>
               <input {...register("email")} type="email" placeholder="you@example.com" className={inputCls} />
               {errors.email && <p className="text-red-400 text-xs mt-1.5">⚠ {errors.email.message}</p>}
             </div>
             <div>
-              <div className="flex justify-between items-center mb-2"><label className="text-xs font-semibold text-white/40 uppercase tracking-widest">Password</label><Link href="/auth/forgot-password" className="text-xs text-brand-400 hover:text-brand-300">Forgot password?</Link></div>
+              <div className="flex justify-between items-center mb-2"><label className="text-xs font-semibold text-white/70 uppercase tracking-widest">Password</label><Link href="/auth/forgot-password" className="text-xs text-brand-400 hover:text-brand-300">Forgot password?</Link></div>
               <div className="relative">
                 <input {...register("password")} type={showPw ? "text" : "password"} placeholder="••••••••" className={inputCls + " pr-11"} />
                 <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors text-sm">{showPw ? "🙈" : "👁"}</button>
@@ -62,7 +62,7 @@ export default function LoginPage() {
               {isPending ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Sign In →</>}
             </button>
           </form>
-          <div className="relative my-8"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div><div className="relative flex justify-center"><span className="bg-[#040d1c] px-3 text-xs text-white/20">New to Terrabyte?</span></div></div>
+          <div className="relative my-8"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div><div className="relative flex justify-center"><span className="bg-[#040d1c] px-3 text-xs text-white/90">New to Terrabyte?</span></div></div>
           <Link href="/auth/register" className="w-full block text-center border border-white/10 hover:border-white/20 text-white/60 hover:text-white font-semibold py-3.5 rounded-xl transition-all text-sm">Create an Account</Link>
         </div>
       </div>

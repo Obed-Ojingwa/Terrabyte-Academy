@@ -27,8 +27,8 @@ export const useAuthStore = create<AuthState>()(
             phone: user.phone,
           },
         };
-        Cookies.set("access_token", access, { expires: 1 });
-        Cookies.set("refresh_token", refresh, { expires: 7 });
+        Cookies.set("access_token", access, { expires: 1, sameSite: "lax" });
+        Cookies.set("refresh_token", refresh, { expires: 7, sameSite: "lax" });
         set({ user: normalizedUser, isAuthenticated: true });
       },
       logout: () => {

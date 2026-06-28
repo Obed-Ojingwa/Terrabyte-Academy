@@ -78,10 +78,10 @@ class AuthService:
             raise HTTPException(status_code=401, detail="User not found")
         await self.db.refresh(user, ["role"])
         revoke_token(refresh_token)
-        new_refresh_token = create_refresh_token(str(user.id))
+        refresh_token_id = str(uuid.uuid4())
         return RefreshTokenResponse(
             access_token=create_access_token(str(user.id), user.role.name),
-            refresh_token=new_refresh_token,
+            refresh_token=create_refresh_token(str(user.id), token_id=refresh_token_id),
             token_type="bearer",
         )
 
