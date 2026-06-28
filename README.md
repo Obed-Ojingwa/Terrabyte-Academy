@@ -40,13 +40,6 @@ celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
 docker-compose up --build -d
 ```
 
-## Default Accounts
-| Role        | Email                              | Password    |
-|-------------|------------------------------------|-------------|
-| Super Admin | superadmin@terrabyteacademy.com    | Admin@1234  |
-| Admin       | admin@terrabyteacademy.com         | Admin@1234  |
-
-⚠️ Change passwords immediately after first login.
 
 ## Tech Stack
 - **Backend**: FastAPI, SQLAlchemy, PostgreSQL, Redis, Celery
