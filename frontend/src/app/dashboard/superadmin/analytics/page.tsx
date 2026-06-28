@@ -17,35 +17,35 @@ export default function SuperAdminAnalyticsPage() {
 
   return (
     <div className="min-h-full page-light p-6 text-slate-950">
-      <h1 className="mb-1 text-2xl font-black text-white">Analytics</h1>
-      <p className="mb-8 text-sm text-white/40">Monitor growth, engagement, and learner activity.</p>
+      <h1 className="mb-1 text-2xl font-black text-slate-950">Analytics</h1>
+      <p className="mb-8 text-sm text-slate-600">Monitor growth, engagement, and learner activity.</p>
 
       <div className="grid gap-4 md:grid-cols-3">
         {metrics.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-2xl border border-white/[0.06] bg-[#071428] p-5">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300">
+          <div key={label} className="page-surface rounded-2xl p-5">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-600">
               <Icon size={18} />
             </div>
-            <p className="text-2xl font-black text-white">{isLoading ? "—" : value}</p>
-            <p className="text-xs text-white/40">{label}</p>
+            <p className="text-2xl font-black text-slate-950">{isLoading ? "—" : value}</p>
+            <p className="text-xs text-slate-500">{label}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 rounded-3xl border border-white/10 bg-[#071428] p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">Performance snapshot</h2>
-        <div className="space-y-3 text-sm text-white/60">
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
+      <div className="mt-6 page-surface rounded-3xl p-5">
+        <h2 className="mb-4 text-lg font-semibold text-slate-950">Performance snapshot</h2>
+        <div className="space-y-3 text-sm text-slate-700">
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
             <span>Enrollment velocity</span>
-            <span className="font-semibold text-brand-300">{stats?.recent_activity?.[0]?.trend ?? "Live"}</span>
+            <span className="font-semibold text-brand-600">{stats?.recent_activity?.[0]?.trend ?? "Live"}</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
             <span>Pending reviews</span>
-            <span className="font-semibold text-emerald-300">{stats?.pending_reviews ?? 0}</span>
+            <span className="font-semibold text-emerald-600">{stats?.pending_reviews ?? 0}</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#03091A] px-3 py-3">
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
             <span>Certificates issued</span>
-            <span className="font-semibold text-amber-300">{stats?.certificates_issued ?? 0}</span>
+            <span className="font-semibold text-amber-600">{stats?.certificates_issued ?? 0}</span>
           </div>
         </div>
       </div>

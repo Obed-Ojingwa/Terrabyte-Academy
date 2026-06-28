@@ -131,37 +131,37 @@ export default function AdminCoursesPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black">Course Management</h1>
-          <p className="mt-1 text-sm text-white/40">Create, edit, publish, and remove courses.</p>
+          <p className="mt-1 text-sm text-slate-500">Create, edit, publish, and remove courses.</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-[#071428] px-4 py-3 text-sm text-white/60">
-          <span className="font-semibold text-white">{courses.length}</span> courses
+        <div className="rounded-2xl border border-slate-200/70 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold text-slate-900">{courses.length}</span> courses
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-[#071428] p-5">
+        <form onSubmit={submit} className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
             <BookOpen size={18} className="text-brand-400" />
             <h2 className="text-lg font-semibold">{editingId ? "Edit course" : "Create course"}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Course title" required />
-            <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Price" type="number" />
-            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Category" />
-            <input value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Level" />
-            <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm">
+            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Course title" required />
+            <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Price" type="number" />
+            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Category" />
+            <input value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Level" />
+            <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950">
               <option value="online">Online</option>
               <option value="offline">Offline</option>
               <option value="hybrid">Hybrid</option>
             </select>
-            <input value={form.duration_weeks} onChange={(e) => setForm({ ...form, duration_weeks: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Duration weeks" type="number" />
-            <input value={form.tutor_id} onChange={(e) => setForm({ ...form, tutor_id: e.target.value })} className="rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Tutor ID" />
-            <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm">
+            <input value={form.duration_weeks} onChange={(e) => setForm({ ...form, duration_weeks: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Duration weeks" type="number" />
+            <input value={form.tutor_id} onChange={(e) => setForm({ ...form, tutor_id: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Tutor ID" />
+            <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
               Published
             </label>
           </div>
-          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-4 min-h-[120px] w-full rounded-xl border border-white/10 bg-[#03091A] px-3 py-2 text-sm" placeholder="Description" />
+          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-4 min-h-[120px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Description" />
           <div className="mt-4">
             <MediaUploader label="Course thumbnail" accept="image/*" onUploaded={(url) => setThumbnailUrl(url)} />
           </div>
@@ -169,30 +169,30 @@ export default function AdminCoursesPage() {
             <button type="submit" className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">
               <Plus size={16} /> {editingId ? "Save changes" : "Create course"}
             </button>
-            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm()); }} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm">Cancel</button>}
+            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm()); }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700">Cancel</button>}
           </div>
         </form>
 
-        <div className="rounded-3xl border border-white/10 bg-[#071428] p-5">
+        <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">Existing courses</h2>
-          {isLoading ? <p className="text-sm text-white/40">Loading...</p> : (
+          {isLoading ? <p className="text-sm text-slate-500">Loading...</p> : (
             <div className="space-y-3">
               {courses.map((course: AdminCourse) => (
-                <div key={course.id} className="rounded-2xl border border-white/10 bg-[#03091A] p-3">
+                <div key={course.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-semibold">{course.title}</div>
-                      <div className="mt-1 text-xs text-white/40">{course.category || "General"} • {course.mode}</div>
+                      <div className="mt-1 text-xs text-slate-500">{course.category || "General"} • {course.mode}</div>
                     </div>
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${course.is_published ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${course.is_published ? "bg-green-500/10 text-green-600" : "bg-yellow-500/10 text-amber-600"}`}>
                       {course.is_published ? "Published" : "Draft"}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
-                    <button onClick={() => startEdit(course)} className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-white/70">
+                    <button onClick={() => startEdit(course)} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
                       <Pencil size={13} /> Edit
                     </button>
-                    <button onClick={() => deleteMutation.mutate(course.id)} className="flex items-center gap-1 rounded-lg border border-red-500/30 px-2.5 py-1.5 text-xs text-red-300">
+                    <button onClick={() => deleteMutation.mutate(course.id)} className="flex items-center gap-1 rounded-lg border border-red-500/30 px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50">
                       <Trash2 size={13} /> Delete
                     </button>
                   </div>

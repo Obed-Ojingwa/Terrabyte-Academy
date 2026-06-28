@@ -34,7 +34,7 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
     { label: "Events", icon: Calendar, href: "/dashboard/admin/events" },
   ],
   super_admin: [
-    { label: "Analytics", icon: BarChart2, href: "/dashboard/superadmin" },
+    { label: "Overview", icon: BarChart2, href: "/dashboard/superadmin" },
     { label: "Admins", icon: Users, href: "/dashboard/superadmin/admins" },
     { label: "Analytics", icon: BarChart2, href: "/dashboard/superadmin/analytics" },
     { label: "Settings", icon: Settings, href: "/dashboard/superadmin/settings" },
