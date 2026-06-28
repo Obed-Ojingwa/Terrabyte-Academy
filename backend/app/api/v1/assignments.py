@@ -6,25 +6,55 @@ from app.database import get_db
 from app.api.deps import get_current_user, require_admin, require_tutor
 from app.models.assignment import Assignment, Submission
 from app.models.course import Course
+from app.models.enrollment import Enrollment
 from app.schemas.lms import AssignmentCreate, AssignmentResponse, AssignmentUpdate, SubmissionResponse, SubmissionReview
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
 
+async def _student_can_access_assignment(current_user, assignment: Assignment, db: AsyncSession) -> bool:
+    if current_user.role.name in {"super_admin", "admin", "tutor"}:
+        return True
+    if assignment.tutor_id and assignment.tutor_id == current_user.id:
+        return True
+    enrollment_result = await db.execute(
+        select(Enrollment).where(
+            Enrollment.student_id == current_user.id,
+            Enrollment.course_id == assignment.course_id,
+            Enrollment.status.in_(["active", "pending", "completed"]),
+        )
+    )
+    return enrollment_result.scalar_one_or_none() is not None
+
+
 @router.get("/", response_model=list[AssignmentResponse])
 async def list_assignments(
     course_id: str | None = Query(None),
+    current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(Assignment).options(joinedload(Assignment.course), joinedload(Assignment.tutor))
     if course_id:
         query = query.where(Assignment.course_id == course_id)
+    if current_user.role.name not in {"super_admin", "admin", "tutor"}:
+        enrolled_courses = (
+            await db.execute(
+                select(Enrollment.course_id).where(
+                    Enrollment.student_id == current_user.id,
+                    Enrollment.status.in_(["active", "pending", "completed"]),
+                )
+            )
+        ).scalars().all()
+        if enrolled_courses:
+            query = query.where(Assignment.course_id.in_(list(enrolled_courses)))
+        else:
+            return []
     result = await db.execute(query.order_by(Assignment.created_at.desc()))
     return result.scalars().all()
 
 
 @router.get("/{assignment_id}", response_model=AssignmentResponse)
-async def get_assignment(assignment_id: str, db: AsyncSession = Depends(get_db)):
+async def get_assignment(assignment_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Assignment)
         .options(joinedload(Assignment.course), joinedload(Assignment.tutor), joinedload(Assignment.submissions))
@@ -33,6 +63,8 @@ async def get_assignment(assignment_id: str, db: AsyncSession = Depends(get_db))
     assignment = result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+    if not await _student_can_access_assignment(current_user, assignment, db):
+        raise HTTPException(status_code=403, detail="Not authorized")
     return assignment
 
 

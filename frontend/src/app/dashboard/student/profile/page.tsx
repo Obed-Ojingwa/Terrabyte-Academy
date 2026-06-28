@@ -28,7 +28,16 @@ export default function StudentProfilePage() {
     mutationFn: async (payload: { first_name: string; last_name: string; phone?: string; avatar_url?: string }) => (await api.patch("/users/me", payload)).data,
     onSuccess: (data) => {
       queryClient.setQueryData(["student-profile"], data);
-      updateUser(data);
+      updateUser({
+        ...data,
+        profile: {
+          id: data.id,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          phone: data.phone,
+          avatar_url: data.avatar_url,
+        },
+      });
       toast.success("Profile updated successfully");
     },
     onError: () => toast.error("Unable to update profile"),

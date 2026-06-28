@@ -5,26 +5,54 @@ from app.database import get_db
 from app.api.deps import get_current_user, require_admin, require_tutor
 from app.models.exam import Exam
 from app.models.course import Course
+from app.models.enrollment import Enrollment
 from app.schemas.lms import ExamCreate, ExamResponse, ExamUpdate
 
 router = APIRouter(prefix="/exams", tags=["Exams"])
 
 
 @router.get("/", response_model=list[ExamResponse])
-async def list_exams(course_id: str | None = Query(None), db: AsyncSession = Depends(get_db)):
+async def list_exams(
+    course_id: str | None = Query(None),
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     query = select(Exam)
     if course_id:
         query = query.where(Exam.course_id == course_id)
+    if current_user.role.name not in {"super_admin", "admin", "tutor"}:
+        enrolled_courses = (
+            await db.execute(
+                select(Enrollment.course_id).where(
+                    Enrollment.student_id == current_user.id,
+                    Enrollment.status.in_(["active", "pending", "completed"]),
+                )
+            )
+        ).scalars().all()
+        if enrolled_courses:
+            query = query.where(Exam.course_id.in_(list(enrolled_courses)))
+        else:
+            return []
     result = await db.execute(query.order_by(Exam.created_at.desc()))
     return result.scalars().all()
 
 
 @router.get("/{exam_id}", response_model=ExamResponse)
-async def get_exam(exam_id: str, db: AsyncSession = Depends(get_db)):
+async def get_exam(exam_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Exam).where(Exam.id == exam_id))
     exam = result.scalar_one_or_none()
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
+    if current_user.role.name not in {"super_admin", "admin", "tutor"}:
+        enrollment_result = await db.execute(
+            select(Enrollment).where(
+                Enrollment.student_id == current_user.id,
+                Enrollment.course_id == exam.course_id,
+                Enrollment.status.in_(["active", "pending", "completed"]),
+            )
+        )
+        if enrollment_result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=403, detail="Not authorized")
     return exam
 
 

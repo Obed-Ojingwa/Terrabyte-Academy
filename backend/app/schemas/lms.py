@@ -3,6 +3,8 @@ from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.course import CourseResponse
+
 
 class UserSummary(BaseModel):
     id: UUID
@@ -75,6 +77,9 @@ class AssignmentResponse(BaseModel):
     description: Optional[str] = None
     due_date: Optional[datetime] = None
     max_score: int
+    status: Optional[str] = None
+    grade: Optional[float] = None
+    submitted_at: Optional[datetime] = None
     created_at: datetime
     course: Optional[CourseSummary] = None
     tutor: Optional[UserSummary] = None
@@ -153,7 +158,7 @@ class EnrollmentResponse(BaseModel):
     enrolled_at: datetime
     completed_at: Optional[datetime] = None
     student: Optional[UserSummary] = None
-    course: Optional[CourseSummary] = None
+    course: Optional[CourseResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 

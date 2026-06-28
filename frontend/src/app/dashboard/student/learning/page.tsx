@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { BookOpen, ClipboardList, Trophy, CheckCircle2 } from "lucide-react";
+import { BookOpen, ClipboardList, Trophy, CheckCircle2, Clock3 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function StudentLearningPage() {
@@ -26,8 +26,14 @@ export default function StudentLearningPage() {
   });
 
   const enrollments = useMemo(() => enrollmentsData ?? [], [enrollmentsData]);
-  const assignments = useMemo(() => assignmentsData ?? [], [assignmentsData]);
-  const exams = useMemo(() => examsData ?? [], [examsData]);
+  const assignments = useMemo(() => {
+    const courseId = selectedEnrollment ? enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment)?.course_id : null;
+    return (assignmentsData ?? []).filter((assignment: any) => !courseId || assignment.course_id === courseId || assignment.course?.id === courseId);
+  }, [assignmentsData, enrollments, selectedEnrollment]);
+  const exams = useMemo(() => {
+    const courseId = selectedEnrollment ? enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment)?.course_id : null;
+    return (examsData ?? []).filter((exam: any) => !courseId || exam.course_id === courseId || exam.course?.id === courseId);
+  }, [examsData, enrollments, selectedEnrollment]);
 
   const selectedCourse = enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment) ?? enrollments[0];
   const courseModules = useMemo(() => selectedCourse?.course?.modules ?? [], [selectedCourse]);
@@ -40,6 +46,17 @@ export default function StudentLearningPage() {
   const selectedLessonData = useMemo(() => {
     return courseModules.flatMap((module: any) => (module.lessons ?? []).map((lesson: any) => ({ ...lesson, moduleTitle: module.title }))).find((lesson: any) => lesson.id === selectedLesson) ?? null;
   }, [courseModules, selectedLesson]);
+
+  useEffect(() => {
+    if (!selectedCourse || !courseModules.length) {
+      setSelectedLesson(null);
+      return;
+    }
+    const firstLesson = courseModules[0]?.lessons?.[0];
+    if (firstLesson && selectedLesson !== firstLesson.id) {
+      setSelectedLesson(firstLesson.id);
+    }
+  }, [courseModules, selectedCourse, selectedLesson]);
 
   return (
     <div className="min-h-full page-light p-6 text-slate-950">
@@ -133,10 +150,14 @@ export default function StudentLearningPage() {
                       <div className="text-sm text-slate-500">{selectedLessonData.moduleTitle}</div>
                       <div className="mt-1 text-lg font-semibold text-slate-950">{selectedLessonData.title}</div>
                     </div>
-                    <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
-                      {selectedLessonData.is_completed ? "This lesson is already marked as complete." : "Use the action below to register your progress for this lesson."}
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Clock3 size={12} />
+                      <span>{selectedLessonData.duration_min ? `${selectedLessonData.duration_min} min` : "Flexible timing"}</span>
                     </div>
-                    <button onClick={() => progressMutation.mutate({ enrollmentId: selectedCourse.id, lessonId: selectedLessonData.id })} className="rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600">
+                    <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 whitespace-pre-wrap">
+                      {selectedLessonData.content || "Lesson content will appear here when the tutor adds it to the course."}
+                    </div>
+                    <button onClick={() => progressMutation.mutate({ enrollmentId: selectedCourse.id, lessonId: selectedLessonData.id })} disabled={progressMutation.isPending} className="rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300">
                       {selectedLessonData.is_completed ? "Revisit lesson" : "Complete lesson"}
                     </button>
                   </div>
