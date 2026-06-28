@@ -24,6 +24,20 @@ export default function TutorCoursesPage() {
     enabled: !!selectedCourseId,
   });
 
+  const [editingMaterial, setEditingMaterial] = useState<{ lessonId: string; materialId: string } | null>(null);
+  const [materialEditForm, setMaterialEditForm] = useState({ title: "", is_downloadable: true });
+
+  const updateMaterialMutation = useMutation({
+    mutationFn: async ({ lessonId, materialId, title, is_downloadable }: { lessonId: string; materialId: string; title: string; is_downloadable: boolean }) =>
+      api.put(`/lesson-materials/${lessonId}/${materialId}`, { title, is_downloadable }),
+    onSuccess: () => {
+      toast.success("Material updated");
+      setEditingMaterial(null);
+      refetchModules();
+    },
+    onError: () => toast.error("Unable to update material"),
+  });
+
   useEffect(() => {
     if (!selectedCourseId && coursesData?.length) {
       setSelectedCourseId(coursesData[0].id);
@@ -150,14 +164,66 @@ export default function TutorCoursesPage() {
                             {(lesson.materials ?? []).length ? (
                               <div className="space-y-2">
                                 {lesson.materials.map((material: any) => (
-                                  <div key={material.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                                    <a href={material.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-brand-600 hover:text-brand-800">
-                                      <DownloadCloud size={14} />
-                                      <span>{material.title}</span>
-                                    </a>
-                                    <button onClick={() => deleteMaterialMutation.mutate({ lessonId: lesson.id, materialId: material.id })} className="text-red-600 text-xs">
-                                      Remove
-                                    </button>
+                                  <div key={material.id} className="space-y-2">
+                                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                                      <a href={material.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-brand-600 hover:text-brand-800">
+                                        <DownloadCloud size={14} />
+                                        <span>{material.title}</span>
+                                      </a>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={() => {
+                                            setEditingMaterial({ lessonId: lesson.id, materialId: material.id });
+                                            setMaterialEditForm({ title: material.title, is_downloadable: material.is_downloadable });
+                                          }}
+                                          className="text-slate-500 text-xs"
+                                        >
+                                          <Pencil size={13} />
+                                        </button>
+                                        <button onClick={() => deleteMaterialMutation.mutate({ lessonId: lesson.id, materialId: material.id })} className="text-red-600 text-xs">
+                                          Remove
+                                        </button>
+                                      </div>
+                                    </div>
+                                    {editingMaterial?.materialId === material.id ? (
+                                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                                        <div className="mb-2 font-semibold text-slate-950">Edit material metadata</div>
+                                        <input
+                                          value={materialEditForm.title}
+                                          onChange={(e) => setMaterialEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                          placeholder="Material title"
+                                        />
+                                        <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+                                          <input
+                                            type="checkbox"
+                                            checked={materialEditForm.is_downloadable}
+                                            onChange={(e) => setMaterialEditForm((prev) => ({ ...prev, is_downloadable: e.target.checked }))}
+                                            className="h-4 w-4 rounded border-slate-300"
+                                          />
+                                          Downloadable
+                                        </label>
+                                        <div className="mt-3 flex gap-2">
+                                          <button
+                                            onClick={() => updateMaterialMutation.mutate({
+                                              lessonId: lesson.id,
+                                              materialId: material.id,
+                                              title: materialEditForm.title,
+                                              is_downloadable: materialEditForm.is_downloadable,
+                                            })}
+                                            className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white"
+                                          >
+                                            Save
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingMaterial(null)}
+                                            className="rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : null}
                                   </div>
                                 ))}
                               </div>

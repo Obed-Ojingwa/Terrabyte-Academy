@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, courses, payments, certificates, notifications, analytics, blog, events, assignments, exams, enrollments, course_content, forum, storage
+from app.api.v1 import auth, users, courses, payments, certificates, notifications, analytics, blog, events, assignments, exams, enrollments, course_content, lesson_materials, forum, storage
 
 api_router = APIRouter()
 api_router.include_router(auth.router)

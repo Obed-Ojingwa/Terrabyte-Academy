@@ -70,6 +70,13 @@ class MaterialResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MaterialUpdate(BaseModel):
+    title: Optional[str] = None
+    is_downloadable: Optional[bool] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CourseResponse(BaseModel):
     id: UUID
     title: str
@@ -133,6 +140,7 @@ class LessonResponse(BaseModel):
     position: int
     duration_min: Optional[int] = None
     is_preview: bool
+    is_completed: Optional[bool] = False
     materials: List[MaterialResponse] = []
 
     model_config = ConfigDict(from_attributes=True)

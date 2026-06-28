@@ -45,6 +45,19 @@ class SubmissionReview(BaseModel):
     status: str = "graded"
 
 
+class SubmissionCreate(BaseModel):
+    text_response: Optional[str] = None
+    s3_key: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExamSubmissionCreate(BaseModel):
+    answers: dict[str, str] = Field(default_factory=dict)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LessonProgressResponse(BaseModel):
     lesson_id: UUID
     is_completed: bool
@@ -155,6 +168,7 @@ class EnrollmentResponse(BaseModel):
     course_id: UUID
     mode: str
     status: str
+    progress: Optional[int] = None
     enrolled_at: datetime
     completed_at: Optional[datetime] = None
     student: Optional[UserSummary] = None

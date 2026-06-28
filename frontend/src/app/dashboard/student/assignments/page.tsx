@@ -1,13 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { FileText } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function StudentAssignmentsPage() {
+  const qc = useQueryClient();
+  const [responses, setResponses] = useState<Record<string, string>>({});
   const { data: assignmentsData = [] } = useQuery({ queryKey: ["student-assignments"], queryFn: async () => (await api.get("/assignments")).data });
   const assignments = useMemo(() => assignmentsData ?? [], [assignmentsData]);
+  const submitAssignmentMutation = useMutation({
+    mutationFn: async ({ assignmentId, text_response }: { assignmentId: string; text_response: string }) =>
+      api.post(`/assignments/${assignmentId}/submissions`, { text_response }),
+    onSuccess: () => {
+      toast.success("Assignment submitted");
+      qc.invalidateQueries({ queryKey: ["student-assignments"] });
+    },
+    onError: () => toast.error("Unable to submit assignment"),
+  });
 
   return (
     <div className="min-h-full page-light p-6 text-slate-950">
@@ -45,6 +57,26 @@ export default function StudentAssignmentsPage() {
                 <div className="font-semibold text-slate-950">Submitted</div>
                 <div className="mt-1">{assignment.submitted_at ? new Date(assignment.submitted_at).toLocaleDateString() : "No"}</div>
               </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <textarea
+                value={responses[assignment.id] ?? assignment.submissions?.[0]?.text_response ?? ""}
+                onChange={(e) => setResponses((prev) => ({ ...prev, [assignment.id]: e.target.value }))}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-950"
+                placeholder="Provide your answer or attach a link here..."
+                rows={4}
+              />
+              <button
+                onClick={() =>
+                  submitAssignmentMutation.mutate({
+                    assignmentId: assignment.id,
+                    text_response: responses[assignment.id] ?? assignment.submissions?.[0]?.text_response ?? "",
+                  })
+                }
+                className="rounded-2xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+              >
+                {assignment.submissions?.[0] ? "Update submission" : "Submit assignment"}
+              </button>
             </div>
           </div>
         ))}

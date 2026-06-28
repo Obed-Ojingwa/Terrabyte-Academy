@@ -7,7 +7,8 @@ from app.api.deps import get_current_user, require_admin, require_tutor
 from app.models.assignment import Assignment, Submission
 from app.models.course import Course
 from app.models.enrollment import Enrollment
-from app.schemas.lms import AssignmentCreate, AssignmentResponse, AssignmentUpdate, SubmissionResponse, SubmissionReview
+from datetime import datetime
+from app.schemas.lms import AssignmentCreate, AssignmentResponse, AssignmentUpdate, SubmissionCreate, SubmissionResponse, SubmissionReview
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
@@ -38,7 +39,7 @@ async def list_assignments(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Assignment).options(joinedload(Assignment.course), joinedload(Assignment.tutor))
+    query = select(Assignment).options(joinedload(Assignment.course), joinedload(Assignment.tutor), joinedload(Assignment.submissions))
     if course_id:
         query = query.where(Assignment.course_id == course_id)
     role_name = current_user.role.name
@@ -137,7 +138,7 @@ async def update_assignment(
 @router.post("/{assignment_id}/submissions", response_model=SubmissionResponse, status_code=201)
 async def create_submission(
     assignment_id: str,
-    payload: SubmissionReview,
+    payload: SubmissionCreate,
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -145,14 +146,31 @@ async def create_submission(
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
 
-    submission = Submission(
-        assignment_id=assignment_id,
-        student_id=current_user.id,
-        status="submitted",
-        score=payload.score,
-        feedback=payload.feedback,
-    )
-    db.add(submission)
+    submission = (
+        await db.execute(
+            select(Submission)
+            .where(
+                Submission.assignment_id == assignment_id,
+                Submission.student_id == current_user.id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if submission is None:
+        submission = Submission(
+            assignment_id=assignment_id,
+            student_id=current_user.id,
+            status="submitted",
+            text_response=payload.text_response,
+            s3_key=payload.s3_key,
+        )
+        db.add(submission)
+    else:
+        submission.text_response = payload.text_response
+        submission.s3_key = payload.s3_key
+        submission.status = "submitted"
+        submission.submitted_at = datetime.utcnow()
+
     await db.commit()
     await db.refresh(submission)
     return submission

@@ -29,6 +29,7 @@ async def _attach_course_context(enrollment: Enrollment, current_user, db: Async
         return enrollment
 
     lesson_ids = [lesson.id for module in course.modules for lesson in module.lessons]
+    progress_rows = []
     if lesson_ids:
         progress_rows = (
             await db.execute(
@@ -44,6 +45,9 @@ async def _attach_course_context(enrollment: Enrollment, current_user, db: Async
                 progress = progress_lookup.get(lesson.id)
                 setattr(lesson, "is_completed", bool(progress and progress.is_completed))
 
+    progress_count = sum(1 for row in progress_rows if row.is_completed)
+    total_lessons = len(lesson_ids)
+    enrollment.progress = int((progress_count / total_lessons) * 100) if total_lessons else 0
     enrollment.course = course
     return enrollment
 

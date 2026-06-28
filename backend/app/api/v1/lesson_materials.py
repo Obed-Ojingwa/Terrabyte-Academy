@@ -1,5 +1,4 @@
 import uuid
-import uuid
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -10,7 +9,7 @@ from sqlalchemy.orm import joinedload
 from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.course import Lesson, Material
-from app.schemas.course import MaterialResponse
+from app.schemas.course import MaterialResponse, MaterialUpdate
 from app.services.storage_service import StorageService
 
 router = APIRouter(prefix="/lesson-materials", tags=["Lesson Materials"])
@@ -60,6 +59,41 @@ async def upload_lesson_material(
     await db.commit()
     await db.refresh(material)
 
+    return MaterialResponse(
+        id=material.id,
+        lesson_id=material.lesson_id,
+        title=material.title,
+        type=material.type,
+        s3_key=material.s3_key,
+        url=storage.get_public_url(material.s3_key),
+        is_downloadable=material.is_downloadable,
+        size_bytes=material.size_bytes,
+        created_at=material.created_at,
+    )
+
+
+from app.schemas.course import MaterialResponse, MaterialUpdate
+
+
+@router.put("/{lesson_id}/{material_id}", response_model=MaterialResponse)
+async def update_lesson_material(
+    lesson_id: str,
+    material_id: str,
+    payload: MaterialUpdate,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    lesson = await require_tutor_for_lesson(lesson_id, current_user, db)
+    material = (await db.execute(select(Material).where(Material.id == material_id, Material.lesson_id == lesson.id))).scalar_one_or_none()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+    if payload.title is not None:
+        material.title = payload.title
+    if payload.is_downloadable is not None:
+        material.is_downloadable = payload.is_downloadable
+    await db.commit()
+    await db.refresh(material)
+    storage = StorageService()
     return MaterialResponse(
         id=material.id,
         lesson_id=material.lesson_id,
