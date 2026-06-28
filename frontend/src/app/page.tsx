@@ -94,7 +94,6 @@ function CourseCard({ course }: { course: typeof courses[0] }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           <div className="absolute top-3 left-3"><span className="text-[10px] font-semibold text-white/90 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/15 uppercase tracking-wide">{course.category}</span></div>
           <div className="absolute top-3 right-3"><span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${course.levelColor}`}>{course.level}</span></div>
-          <div className="absolute bottom-3 left-4 text-2xl drop-shadow">{course.emoji}</div>
         </div>
         <div className="p-5">
           <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
