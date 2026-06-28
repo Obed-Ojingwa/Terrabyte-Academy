@@ -45,20 +45,67 @@ export default function ContactPage() {
         </div>
       </nav>
 
-      {/* Header */}
-      <section className="relative pt-32 pb-16 px-6 md:px-12 text-center overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-[#1a6ebf]/8 blur-[100px] pointer-events-none" />
-        <div className="relative max-w-2xl mx-auto">
-          <p className="text-[#378add] text-xs font-bold uppercase tracking-widest mb-4">Get In Touch</p>
-          <h1 className="text-5xl font-black tracking-tight mb-5">Contact Us</h1>
-          <p className="text-black/45 text-lg leading-relaxed">
-            Have a question about a course, payment, or partnership? We&apos;re here to help — reach out and we&apos;ll respond within 24 hours.
-          </p>
+      {/* Hero */}
+      <section className="relative overflow-hidden pt-36 pb-24 px-6 md:px-12">
+        <div className="absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-white/95 to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-brand-400/20 blur-3xl" />
+        <div className="absolute left-0 top-28 h-64 w-64 rounded-full bg-slate-300/30 blur-3xl" />
+        <div className="relative max-w-7xl mx-auto grid gap-12 lg:grid-cols-[1.1fr_0.9fr] items-center">
+          <div className="space-y-8">
+            <div className="max-w-xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.32em] text-brand-500 mb-3">Support made for ambitious learners</p>
+              <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-950">Reach out and get expert help choosing the right path.</h1>
+              <p className="mt-6 text-lg leading-relaxed text-slate-600">
+                Our team is ready to answer questions about courses, payments, partnerships, and how you can start your tech career with confidence.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="page-surface rounded-3xl p-6">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500 mb-3">Fast reply</p>
+                <p className="text-3xl font-black text-slate-950">Under 1 hour</p>
+              </div>
+              <div className="page-surface rounded-3xl p-6">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500 mb-3">Tailored advice</p>
+                <p className="text-3xl font-black text-slate-950">Course matching</p>
+              </div>
+              <div className="page-surface rounded-3xl p-6">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500 mb-3">Premium care</p>
+                <p className="text-3xl font-black text-slate-950">Success-focused</p>
+              </div>
+            </div>
+          </div>
+          <div className="relative rounded-[2rem] border border-slate-200 bg-white/95 p-10 shadow-[0_40px_80px_rgba(15,23,42,0.08)]">
+            <div className="mb-8">
+              <span className="inline-flex items-center rounded-full bg-brand-500/10 px-3 py-1 text-sm font-semibold text-brand-700">Premium support</span>
+              <h2 className="mt-6 text-3xl font-black text-slate-950">Let&apos;s get your questions answered</h2>
+              <p className="mt-3 text-slate-600">Send a message and our admissions advisors will share the best learning options for your goals.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl bg-slate-50 p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400 mb-2">Email</p>
+                <p className="font-semibold text-slate-950">hello@terrabyteacademy.com</p>
+              </div>
+              <div className="rounded-3xl bg-slate-50 p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400 mb-2">WhatsApp</p>
+                <p className="font-semibold text-slate-950">+234 800 000 0000</p>
+              </div>
+            </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl bg-slate-50 p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400 mb-2">Office hours</p>
+                <p className="font-semibold text-slate-950">Mon–Fri, 9am – 6pm WAT</p>
+              </div>
+              <div className="rounded-3xl bg-slate-50 p-5">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400 mb-2">Location</p>
+                <p className="font-semibold text-slate-950">Victoria Island, Lagos</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Main content */}
-      <section className="py-12 px-6 md:px-12 pb-24">
+      <section className="pb-24 px-6 md:px-12">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-10">
 
           {/* Contact info sidebar */}
@@ -70,11 +117,11 @@ export default function ContactPage() {
                   <div key={item.label} className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-[#1a6ebf]/10 flex items-center justify-center text-lg flex-shrink-0">{item.icon}</div>
                     <div>
-                      <p className="text-xs text-white/35 font-semibold uppercase tracking-wider mb-0.5">{item.label}</p>
+                      <p className="text-xs text-black/65 font-semibold uppercase tracking-wider mb-0.5">{item.label}</p>
                       {item.href ? (
-                        <a href={item.href} className="text-sm text-white hover:text-[#5ba3e8] transition-colors">{item.value}</a>
+                        <a href={item.href} className="text-sm text-black hover:text-[#5ba3e8] transition-colors">{item.value}</a>
                       ) : (
-                        <p className="text-sm text-white">{item.value}</p>
+                        <p className="text-sm text-black">{item.value}</p>
                       )}
                     </div>
                   </div>
@@ -89,10 +136,10 @@ export default function ContactPage() {
             >
               <div className="w-12 h-12 rounded-xl bg-[#25D366]/15 flex items-center justify-center text-2xl flex-shrink-0">💬</div>
               <div>
-                <p className="font-bold text-white text-sm group-hover:text-[#25D366] transition-colors">Chat on WhatsApp</p>
-                <p className="text-white/40 text-xs mt-0.5">Fastest response — usually within 1 hour</p>
+                <p className="font-bold text-black text-sm group-hover:text-[#25D366] transition-colors">Chat on WhatsApp</p>
+                <p className="text-black/40 text-xs mt-0.5">Fastest response — usually within 1 hour</p>
               </div>
-              <svg className="w-4 h-4 text-white/30 ml-auto group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+              <svg className="w-4 h-4 text-black/30 ml-auto group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
             </a>
 
             {/* Map placeholder */}
