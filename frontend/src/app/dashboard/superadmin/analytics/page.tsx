@@ -16,7 +16,7 @@ export default function SuperAdminAnalyticsPage() {
   ];
 
   return (
-    <div className="min-h-full bg-[#03091A] p-6">
+    <div className="min-h-full page-light p-6 text-slate-950">
       <h1 className="mb-1 text-2xl font-black text-white">Analytics</h1>
       <p className="mb-8 text-sm text-white/40">Monitor growth, engagement, and learner activity.</p>
 

@@ -15,12 +15,12 @@ const heroSlides = [
 ];
 
 const courses = [
-  { title: "Cybersecurity Fundamentals", category: "Security", level: "Beginner", price: 75000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=600&q=80&auto=format&fit=crop", emoji: "🔐", levelColor: "bg-green-100 text-green-700", slug: "cybersecurity-fundamentals" },
-  { title: "Data Analysis with Python", category: "Data Science", level: "Intermediate", price: 85000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80&auto=format&fit=crop", emoji: "📊", levelColor: "bg-amber-100 text-amber-700", slug: "data-analysis-python" },
-  { title: "Cloud Architecture (AWS)", category: "Cloud", level: "Advanced", price: 120000, duration: "12 weeks", thumb: "https://images.unsplash.com/photo-1667984390527-850f63192709?w=600&q=80&auto=format&fit=crop", emoji: "☁️", levelColor: "bg-red-100 text-red-700", slug: "cloud-architecture-aws" },
-  { title: "Full-Stack Web Development", category: "Development", level: "Intermediate", price: 95000, duration: "16 weeks", thumb: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80&auto=format&fit=crop", emoji: "💻", levelColor: "bg-amber-100 text-amber-700", slug: "fullstack-web-development" },
-  { title: "UI/UX Design Mastery", category: "Design", level: "Beginner", price: 65000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80&auto=format&fit=crop", emoji: "🎨", levelColor: "bg-green-100 text-green-700", slug: "uiux-design-mastery" },
-  { title: "Network Administration", category: "Networking", level: "Intermediate", price: 80000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80&auto=format&fit=crop", emoji: "🌐", levelColor: "bg-amber-100 text-amber-700", slug: "network-administration" },
+  { title: "Cybersecurity Fundamentals", category: "Security", level: "Beginner", price: 75000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=600&q=80&auto=format&fit=crop", levelColor: "bg-green-100 text-green-700", slug: "cybersecurity-fundamentals" },
+  { title: "Data Analysis with Python", category: "Data Science", level: "Intermediate", price: 85000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80&auto=format&fit=crop", levelColor: "bg-amber-100 text-amber-700", slug: "data-analysis-python" },
+  { title: "Cloud Architecture (AWS)", category: "Cloud", level: "Advanced", price: 120000, duration: "12 weeks", thumb: "https://images.unsplash.com/photo-1667984390527-850f63192709?w=600&q=80&auto=format&fit=crop", levelColor: "bg-red-100 text-red-700", slug: "cloud-architecture-aws" },
+  { title: "Full-Stack Web Development", category: "Development", level: "Intermediate", price: 95000, duration: "16 weeks", thumb: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80&auto=format&fit=crop", levelColor: "bg-amber-100 text-amber-700", slug: "fullstack-web-development" },
+  { title: "UI/UX Design Mastery", category: "Design", level: "Beginner", price: 65000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80&auto=format&fit=crop", levelColor: "bg-green-100 text-green-700", slug: "uiux-design-mastery" },
+  { title: "Network Administration", category: "Networking", level: "Intermediate", price: 80000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80&auto=format&fit=crop", levelColor: "bg-amber-100 text-amber-700", slug: "network-administration" },
 ];
 
 const testimonials = [

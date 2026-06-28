@@ -15,7 +15,7 @@ export default function VerifyCertificatePage() {
     finally { setLoading(false); }
   };
   return (
-    <div className="min-h-screen bg-[#03091A] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen page-light flex flex-col items-center justify-center px-6 text-slate-950">
       <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage:"linear-gradient(#378add 1px,transparent 1px),linear-gradient(90deg,#378add 1px,transparent 1px)",backgroundSize:"60px 60px"}}/>
       <div className="relative w-full max-w-lg text-center">
         <p className="text-brand-400 text-xs font-semibold uppercase tracking-widest mb-4">Certificate Verification</p>

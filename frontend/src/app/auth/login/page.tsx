@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
   return (
-    <div className="min-h-screen bg-[#03091A] flex overflow-hidden">
+    <div className="min-h-screen page-light flex overflow-hidden text-slate-950">
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-900 to-[#03091A]" />
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#378add 1px,transparent 1px),linear-gradient(90deg,#378add 1px,transparent 1px)", backgroundSize: "48px 48px" }} />

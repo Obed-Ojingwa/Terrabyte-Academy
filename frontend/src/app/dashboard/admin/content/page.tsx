@@ -99,7 +99,7 @@ export default function AdminContentPage() {
   const payments = useMemo(() => paymentsData?.items ?? [], [paymentsData]);
 
   return (
-    <div className="min-h-full bg-[#03091A] p-6 text-white">
+    <div className="min-h-full page-light p-6 text-slate-950">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight">Content & Payments</h1>

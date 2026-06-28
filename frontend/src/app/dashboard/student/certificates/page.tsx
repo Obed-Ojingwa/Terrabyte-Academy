@@ -7,7 +7,7 @@ export default function StudentCertificatesPage() {
   const { data: certificates = [] } = useQuery({ queryKey: ["student-certificates"], queryFn: async () => (await api.get("/certificates/me")).data });
 
   return (
-    <div className="min-h-full bg-[#03091A] p-6 text-white">
+    <div className="min-h-full page-light p-6 text-slate-950">
       <div className="mb-6">
         <h1 className="text-2xl font-black">Certificates</h1>
         <p className="mt-1 text-sm text-white/40">View your issued certificates and verification IDs.</p>

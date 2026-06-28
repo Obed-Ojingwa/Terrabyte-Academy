@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const revenueSeries = stats?.revenue_series ?? [];
   const activityItems = stats?.recent_activity ?? [];
   return (
-    <div className="p-6 space-y-6 bg-[#03091A] min-h-full">
+    <div className="p-6 space-y-6 page-light min-h-full text-slate-950">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-black text-white tracking-tight">Admin Dashboard</h1><p className="text-white/40 text-sm mt-1">Platform overview — {new Date().toLocaleDateString("en-NG",{month:"long",year:"numeric"})}</p></div>
         <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all"><BookOpen size={15}/> New Course</button>

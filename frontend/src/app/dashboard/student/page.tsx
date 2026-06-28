@@ -24,7 +24,7 @@ export default function StudentDashboard() {
   const enrollments = useMemo(() => enrollmentsData ?? [], [enrollmentsData]);
 
   return (
-    <div className="p-6 space-y-8 bg-[#03091A] min-h-full">
+    <div className="p-6 space-y-8 page-light min-h-full text-slate-950">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-black text-white tracking-tight">Welcome back, {user?.first_name}!</h1><p className="text-white/40 text-sm mt-1">Here&apos;s your learning progress overview</p></div>
         <div className="w-10 h-10 rounded-full bg-brand-700 flex items-center justify-center text-sm font-bold text-white">{user?.first_name?.[0]}{user?.last_name?.[0]}</div>

@@ -30,17 +30,17 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="bg-[#03091A] text-white min-h-screen">
+    <div className="page-light min-h-screen text-slate-950">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#03091A]/85 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl text-slate-950">
         <div className="max-w-7xl mx-auto px-5 md:px-10 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1a6ebf] to-[#0e4a80] flex items-center justify-center text-sm font-black text-white">T</div>
             <span className="font-black text-base">Terrabyte <span className="text-[#378add]">Academy</span></span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-white/55 hover:text-white transition-colors">← Back to Home</Link>
-            <Link href="/auth/register" className="text-sm bg-[#1a6ebf] hover:bg-[#185fa5] px-5 py-2.5 rounded-xl font-bold transition-all">Get Started</Link>
+            <Link href="/" className="text-sm text-slate-600 hover:text-slate-950 transition-colors">← Back to Home</Link>
+            <Link href="/auth/register" className="text-sm bg-[#1a6ebf] hover:bg-[#185fa5] px-5 py-2.5 rounded-xl font-bold transition-all text-white">Get Started</Link>
           </div>
         </div>
       </nav>
@@ -51,7 +51,7 @@ export default function ContactPage() {
         <div className="relative max-w-2xl mx-auto">
           <p className="text-[#378add] text-xs font-bold uppercase tracking-widest mb-4">Get In Touch</p>
           <h1 className="text-5xl font-black tracking-tight mb-5">Contact Us</h1>
-          <p className="text-white/45 text-lg leading-relaxed">
+          <p className="text-black/45 text-lg leading-relaxed">
             Have a question about a course, payment, or partnership? We&apos;re here to help — reach out and we&apos;ll respond within 24 hours.
           </p>
         </div>
@@ -63,8 +63,8 @@ export default function ContactPage() {
 
           {/* Contact info sidebar */}
           <div className="lg:col-span-2 space-y-5">
-            <div className="bg-[#071428] border border-white/[0.07] rounded-2xl p-7">
-              <h2 className="font-bold text-white text-base mb-6">Contact Information</h2>
+            <div className="page-surface rounded-2xl p-7">
+              <h2 className="font-bold text-slate-950 text-base mb-6">Contact Information</h2>
               <div className="space-y-5">
                 {contactInfo.map((item) => (
                   <div key={item.label} className="flex items-start gap-4">
@@ -85,7 +85,7 @@ export default function ContactPage() {
             {/* WhatsApp CTA */}
             <a
               href="https://wa.me/234XXXXXXXXXX"
-              className="flex items-center gap-4 bg-[#25D366]/10 border border-[#25D366]/25 hover:border-[#25D366]/50 rounded-2xl p-5 transition-all group"
+              className="flex items-center gap-4 page-surface border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 transition-all group"
             >
               <div className="w-12 h-12 rounded-xl bg-[#25D366]/15 flex items-center justify-center text-2xl flex-shrink-0">💬</div>
               <div>
@@ -96,8 +96,8 @@ export default function ContactPage() {
             </a>
 
             {/* Map placeholder */}
-            <div className="bg-[#071428] border border-white/[0.07] rounded-2xl overflow-hidden">
-              <div className="h-40 bg-gradient-to-br from-[#0a2030] to-[#071428] flex items-center justify-center">
+            <div className="page-surface rounded-2xl overflow-hidden">
+              <div className="h-40 bg-slate-100 flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-3xl mb-2">📍</div>
                   <p className="text-white/40 text-xs">Victoria Island, Lagos</p>

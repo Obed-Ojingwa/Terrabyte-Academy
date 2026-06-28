@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 export default function TutorDashboard() {
   const { user } = useAuthStore();
   return (
-    <div className="p-6 bg-[#03091A] min-h-full">
+    <div className="p-6 page-light min-h-full text-slate-950">
       <h1 className="text-2xl font-black text-white mb-1">Tutor Dashboard</h1>
       <p className="text-white/40 text-sm mb-8">Welcome, {user?.first_name}. Manage your courses and students here.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

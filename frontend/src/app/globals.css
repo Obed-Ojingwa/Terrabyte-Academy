@@ -5,8 +5,8 @@
 @layer base {
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { @apply bg-[#03091A] text-white antialiased; }
-  ::selection { background: rgba(55,138,221,0.3); color: #fff; }
+  body { @apply bg-slate-50 text-slate-950 antialiased; }
+  ::selection { background: rgba(59,130,246,0.18); color: #0f172a; }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: #03091A; }
   ::-webkit-scrollbar-thumb { background: rgba(55,138,221,0.3); border-radius: 999px; }
@@ -14,6 +14,13 @@
 }
 
 @layer utilities {
+  .page-light {
+    @apply bg-slate-50 text-slate-950;
+    background-image: radial-gradient(circle at top, rgba(59,130,246,0.08), transparent 26%), linear-gradient(180deg, rgba(248,250,252,0.96), #f8fafc 56%);
+  }
+  .page-surface {
+    @apply bg-white border border-slate-200 shadow-[0_20px_60px_rgba(15,23,42,0.08)];
+  }
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

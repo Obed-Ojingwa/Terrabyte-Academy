@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
     finally { setLoading(false); }
   };
   return (
-    <div className="min-h-screen bg-[#03091A] flex items-center justify-center px-6">
+    <div className="min-h-screen page-light flex items-center justify-center px-6 text-slate-950">
       <div className="relative w-full max-w-md">
         <div className="text-center mb-10">
           <BrandLogo className="mb-8" />

@@ -10,13 +10,13 @@ export default function CoursesPage() {
   const { data, isLoading } = useCourses({ ...filters, ...(search ? { search } : {}) });
   const { data: suggestions } = usePopularCourses(6);
   return (
-    <div className="bg-[#03091A] min-h-screen">
+    <div className="page-light min-h-screen text-slate-950">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-black text-white mb-2 tracking-tight">Explore Courses</h1>
-        <p className="text-white/40 mb-8">Find the perfect course to advance your career</p>
+        <h1 className="text-4xl font-black mb-2 tracking-tight">Explore Courses</h1>
+        <p className="text-slate-600 mb-8">Find the perfect course to advance your career</p>
         <div className="relative mb-8">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25">⌕</span>
-          <input type="text" placeholder="Search courses..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 focus:border-brand-500 text-white placeholder:text-white/20 rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all"/>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
+          <input type="text" placeholder="Search courses..." value={search} onChange={e=>setSearch(e.target.value)} className="w-full bg-white border border-slate-200 focus:border-brand-500 text-slate-950 placeholder:text-slate-400 rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all shadow-sm"/>
         </div>
         {suggestions?.length ? (
           <div className="mb-10">
