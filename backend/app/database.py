@@ -29,6 +29,7 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
         query_params["ssl"] = query_params.pop("sslmode")
 
     host = parsed.hostname or ""
+    is_pooler_like = any(marker in host for marker in ("pooler", "pgbouncer", "render.com"))
 
     if "ssl" in query_params:
         ssl_value = query_params.pop("ssl")
@@ -39,7 +40,7 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
         else:
             connect_args["ssl"] = ssl_value
     elif host and (
-        host.endswith("supabase.co") or host.endswith("supabase.com") or host.endswith(".pooler.supabase.com")
+        host.endswith("supabase.co") or host.endswith("supabase.com") or host.endswith(".pooler.supabase.com") or is_pooler_like
     ):
         connect_args["ssl"] = "require"
 
