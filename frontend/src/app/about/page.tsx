@@ -1,6 +1,7 @@
 // C:\Users\Melody\Documents\Terrabyte Academy\frontend\src\app\about\page.tsx
 
 import Link from "next/link";
+import PublicHeader from "@/components/ui/PublicHeader";
 
 const team = [
   { name: "Dr. Akinwale Obi", role: "Chief Executive Officer", bio: "15+ years in tech education. Former Google Africa engineer.", avatar: "AO" },
@@ -19,19 +20,7 @@ const values = [
 export default function AboutPage() {
   return (
     <div className="page-light min-h-screen">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl text-slate-950">
-        <div className="max-w-7xl mx-auto px-5 md:px-10 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1a6ebf] to-[#0e4a80] flex items-center justify-center text-sm font-black text-white">T</div>
-            <span className="font-black text-base">Terrabyte <span className="text-[#378add]">Academy</span></span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-slate-600 hover:text-slate-950 transition-colors">← Back to Home</Link>
-            <Link href="/auth/register" className="text-sm bg-[#1a6ebf] hover:bg-[#185fa5] px-5 py-2.5 rounded-xl font-bold transition-all text-white">Get Started</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader />
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-6 md:px-12 overflow-hidden">

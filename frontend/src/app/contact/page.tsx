@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import PublicHeader from "@/components/ui/PublicHeader";
 
 const inputCls = "w-full bg-white/[0.04] border border-white/10 focus:border-[#1a6ebf] text-white placeholder:text-white/20 rounded-xl px-4 py-3.5 text-sm outline-none transition-all focus:ring-1 focus:ring-[#1a6ebf]/40";
 
@@ -31,19 +32,7 @@ export default function ContactPage() {
 
   return (
     <div className="page-light min-h-screen text-slate-950">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl text-slate-950">
-        <div className="max-w-7xl mx-auto px-5 md:px-10 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1a6ebf] to-[#0e4a80] flex items-center justify-center text-sm font-black text-white">T</div>
-            <span className="font-black text-base">Terrabyte <span className="text-[#378add]">Academy</span></span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-slate-600 hover:text-slate-950 transition-colors">← Back to Home</Link>
-            <Link href="/auth/register" className="text-sm bg-[#1a6ebf] hover:bg-[#185fa5] px-5 py-2.5 rounded-xl font-bold transition-all text-white">Get Started</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader />
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-36 pb-24 px-6 md:px-12">

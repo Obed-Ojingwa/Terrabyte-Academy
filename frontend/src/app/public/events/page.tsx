@@ -2,12 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import PublicHeader from "@/components/ui/PublicHeader";
 
 export default function PublicEventsPage() {
   const { data: events = [] } = useQuery({ queryKey: ["public-events"], queryFn: async () => (await api.get("/events")).data });
 
   return (
-    <div className="page-light min-h-screen px-6 py-24 text-slate-950">
+    <div className="page-light min-h-screen pt-20 px-6 py-24 text-slate-950">
+      <PublicHeader />
       <div className="mx-auto max-w-6xl">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-400">Upcoming Events</p>
         <h1 className="mt-3 text-4xl font-black">Join our live sessions and workshops</h1>

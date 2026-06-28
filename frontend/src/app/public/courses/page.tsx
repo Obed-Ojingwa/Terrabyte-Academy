@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useCourses, usePopularCourses } from "@/hooks/useCourses";
 import CourseCard from "@/components/courses/CourseCard";
 import CourseFilter from "@/components/courses/CourseFilter";
+import PublicHeader from "@/components/ui/PublicHeader";
 
 export default function CoursesPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -10,7 +11,8 @@ export default function CoursesPage() {
   const { data, isLoading } = useCourses({ ...filters, ...(search ? { search } : {}) });
   const { data: suggestions } = usePopularCourses(6);
   return (
-    <div className="page-light min-h-screen text-slate-950">
+    <div className="page-light min-h-screen pt-20 text-slate-950">
+      <PublicHeader />
       <div className="max-w-7xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-black mb-2 tracking-tight">Explore Courses</h1>
         <p className="text-slate-600 mb-8">Find the perfect course to advance your career</p>
