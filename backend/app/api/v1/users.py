@@ -4,8 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
-from app.models.user import User, Role
-from app.schemas.auth import UserUpdateRequest
+from app.models.user import Role, User
+from app.schemas.auth import UserCreateRequest, UserUpdateRequest
+from app.core.security import hash_password
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -47,6 +48,48 @@ async def update_me(payload: UserUpdateRequest, current_user: User = Depends(get
         "is_verified": current_user.is_verified,
         "created_at": current_user.created_at,
     }
+
+@router.post("/", status_code=201)
+async def create_user(payload: UserCreateRequest, current_user=Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    existing = await db.execute(select(User).where(User.email == payload.email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    if payload.role_name in {"admin", "super_admin"} and current_user.role.name != "super_admin":
+        raise HTTPException(status_code=403, detail="Only super admin can create admin accounts")
+
+    role_result = await db.execute(select(Role).where(Role.name == payload.role_name))
+    role = role_result.scalar_one_or_none()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+
+    user = User(
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        phone=payload.phone,
+        role_id=role.id,
+        is_active=True,
+        is_verified=False,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    await db.refresh(user, ["role"])
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone": user.phone,
+        "avatar_url": user.avatar_url,
+        "role": {"name": user.role.name},
+        "is_active": user.is_active,
+        "is_verified": user.is_verified,
+        "created_at": user.created_at,
+    }
+
 
 @router.get("/")
 async def list_users(current_user=Depends(require_admin), db: AsyncSession = Depends(get_db)):

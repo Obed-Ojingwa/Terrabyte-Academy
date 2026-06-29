@@ -35,6 +35,15 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UserCreateRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: Optional[str] = None
+    role_name: Optional[str] = Field(default="student", min_length=1, max_length=50)
+
+
 class UserUpdateRequest(BaseModel):
     first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
