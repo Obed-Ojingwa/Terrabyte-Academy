@@ -41,3 +41,11 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "Terrabyte Academy"}
+
+var = "Hello, world in the backend"
+
+@app.get("/check")
+def check():
+    return{ f"{var}Yess the backend is firing as expected": "ok", "service": "Terrabyte Academy"}
+
+
