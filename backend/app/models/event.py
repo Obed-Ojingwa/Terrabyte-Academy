@@ -4,6 +4,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from app.database import Base
+from app.models.user import User
 
 
 class Event(Base):
@@ -19,3 +20,4 @@ class Event(Base):
     is_online: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_by_user: Mapped["User" | None] = relationship(foreign_keys=[created_by])

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { Users, ShieldCheck, Ban } from "lucide-react";
+import { StudentProgressResponse } from "@/types/course";
 
 export default function AdminStudentsPage() {
   const queryClient = useQueryClient();
@@ -26,6 +27,13 @@ export default function AdminStudentsPage() {
   });
 
   const users = useMemo(() => data?.items ?? [], [data]);
+
+  const studentProgressQuery = useQuery<StudentProgressResponse>({
+    queryKey: ["admin-student-progress", selectedUserId],
+    queryFn: async () => (await api.get(`/admin/students/${selectedUserId}/progress`)).data,
+    enabled: !!selectedUserId,
+    onError: () => toast.error("Unable to load student progress"),
+  });
 
   return (
     <div className="min-h-full page-light p-6 text-slate-950">
@@ -96,6 +104,32 @@ export default function AdminStudentsPage() {
                       <button onClick={() => updateMutation.mutate({ userId: user.id, isActive: !user.is_active })} className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white ${user.is_active ? "bg-red-600" : "bg-green-600"}`}>
                         <Ban size={15} /> {user.is_active ? "Block account" : "Unblock account"}
                       </button>
+                    </div>
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-slate-950">Student progress</h3>
+                        <span className="text-xs text-slate-500">{studentProgressQuery.isFetching ? "Refreshing..." : ""}</span>
+                      </div>
+                      {studentProgressQuery.isLoading ? (
+                        <p className="text-sm text-slate-500 mt-3">Loading progress...</p>
+                      ) : studentProgressQuery.data?.progress?.length ? (
+                        <div className="space-y-3 mt-3">
+                          {studentProgressQuery.data.progress.map((item) => (
+                            <div key={item.course_id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <div className="font-semibold text-slate-950">{item.course_title}</div>
+                                  <div className="text-xs text-slate-500">{item.enrollment_status}</div>
+                                </div>
+                                <div className="text-sm font-semibold text-slate-950">{item.progress_percent}%</div>
+                              </div>
+                              <div className="mt-2 text-xs text-slate-500">{item.lessons_completed}/{item.total_lessons} lessons completed</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 mt-3">No progress data available for this student.</p>
+                      )}
                     </div>
                   </div>
                 );

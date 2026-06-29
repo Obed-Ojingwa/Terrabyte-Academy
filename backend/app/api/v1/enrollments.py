@@ -34,7 +34,7 @@ async def _attach_course_context(enrollment: Enrollment, current_user, db: Async
         progress_rows = (
             await db.execute(
                 select(LessonProgress).where(
-                    LessonProgress.student_id == current_user.id,
+                    LessonProgress.student_id == enrollment.student_id,
                     LessonProgress.lesson_id.in_(lesson_ids),
                 )
             )

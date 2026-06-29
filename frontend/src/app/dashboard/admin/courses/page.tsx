@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
-import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, FileText, Users } from "lucide-react";
 import MediaUploader from "@/components/uploads/MediaUploader";
+import { CourseMaterialResponse, StudentCourseProgress } from "@/types/course";
 
 type AdminCourse = {
   id: string;
@@ -49,10 +50,26 @@ export default function AdminCoursesPage() {
   const [form, setForm] = useState<CourseFormState>(emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedTutorId, setSelectedTutorId] = useState<string>("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-courses"],
     queryFn: async () => (await api.get("/courses")).data,
+  });
+
+  const courseMaterialsQuery = useQuery<CourseMaterialResponse[]>({
+    queryKey: ["admin-course-materials", selectedCourseId],
+    queryFn: async () => (await api.get(`/admin/courses/${selectedCourseId}/materials`)).data,
+    enabled: !!selectedCourseId,
+    onError: () => toast.error("Unable to load course materials"),
+  });
+
+  const courseStudentProgressQuery = useQuery<StudentCourseProgress[]>({
+    queryKey: ["admin-course-students-progress", selectedCourseId],
+    queryFn: async () => (await api.get(`/admin/courses/${selectedCourseId}/students/progress`)).data,
+    enabled: !!selectedCourseId,
+    onError: () => toast.error("Unable to load course student progress"),
   });
 
   const createMutation = useMutation({
@@ -85,6 +102,19 @@ export default function AdminCoursesPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
     },
     onError: () => toast.error("Unable to delete course"),
+  });
+
+  const assignTutorMutation = useMutation({
+    mutationFn: async ({ courseId, tutorId }: { courseId: string; tutorId: string | null }) =>
+      api.put(`/admin/courses/${courseId}/tutor`, { tutor_id: tutorId }),
+    onSuccess: () => {
+      toast.success("Tutor assignment updated");
+      queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
+      if (selectedCourseId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-course-students-progress", selectedCourseId] });
+      }
+    },
+    onError: () => toast.error("Unable to assign tutor"),
   });
 
   const courses = useMemo(() => data?.items ?? [], [data]);
@@ -125,6 +155,16 @@ export default function AdminCoursesPage() {
       is_published: Boolean(course.is_published),
     });
   };
+
+  const selectCourse = (course: AdminCourse) => {
+    setSelectedCourseId(course.id);
+    setSelectedTutorId(course.tutor?.id ?? "");
+  };
+
+  const selectedCourse = useMemo(
+    () => courses.find((course: AdminCourse) => course.id === selectedCourseId) ?? null,
+    [courses, selectedCourseId]
+  );
 
   return (
     <div className="min-h-full page-light p-6 text-slate-950">
@@ -188,12 +228,15 @@ export default function AdminCoursesPage() {
                       {course.is_published ? "Published" : "Draft"}
                     </span>
                   </div>
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button onClick={() => startEdit(course)} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
                       <Pencil size={13} /> Edit
                     </button>
                     <button onClick={() => deleteMutation.mutate(course.id)} className="flex items-center gap-1 rounded-lg border border-red-500/30 px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50">
                       <Trash2 size={13} /> Delete
+                    </button>
+                    <button onClick={() => selectCourse(course)} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                      <Users size={13} /> Details
                     </button>
                   </div>
                 </div>
@@ -201,6 +244,136 @@ export default function AdminCoursesPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm mt-6">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Selected course details</h2>
+            <p className="text-sm text-slate-500">View tutor assignment, materials, and student progress.</p>
+          </div>
+          <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm text-slate-600">{selectedCourse ? selectedCourse.title : "No course selected"}</span>
+        </div>
+        {!selectedCourse ? (
+          <p className="text-sm text-slate-500">Choose a course from the list to inspect its materials, assign a tutor, or review student progress.</p>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Course</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{selectedCourse.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{selectedCourse.category || "Category not set"} • {selectedCourse.mode}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Current tutor</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{selectedCourse.tutor?.id ?? "Unassigned"}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{selectedCourse.is_published ? "Published" : "Draft"}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <label className="block text-sm font-semibold text-slate-700">Assign tutor by ID</label>
+                <input
+                  value={selectedTutorId}
+                  onChange={(e) => setSelectedTutorId(e.target.value)}
+                  className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950"
+                  placeholder="Tutor ID"
+                />
+                <button
+                  type="button"
+                  onClick={() => selectedCourseId && assignTutorMutation.mutate({ courseId: selectedCourseId, tutorId: selectedTutorId || null })}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+                >
+                  <FileText size={16} /> Assign tutor
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-700">Latest queries</p>
+                <div className="mt-3 space-y-2">
+                  <button
+                    onClick={() => courseMaterialsQuery.refetch()}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    View course materials
+                  </button>
+                  <button
+                    onClick={() => courseStudentProgressQuery.refetch()}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    View student progress
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-950">Course materials</h3>
+                  <span className="text-xs text-slate-500">{courseMaterialsQuery.isFetching ? "Refreshing..." : ""}</span>
+                </div>
+                {courseMaterialsQuery.isLoading ? (
+                  <p className="text-sm text-slate-500">Loading materials...</p>
+                ) : courseMaterialsQuery.data?.length ? (
+                  <div className="space-y-4">
+                    {courseMaterialsQuery.data.map((item) => (
+                      <div key={item.lesson_id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="font-semibold text-slate-950">{item.lesson_title}</div>
+                        <div className="mt-3 space-y-2">
+                          {item.materials.map((material) => (
+                            <div key={material.id} className="grid gap-2 sm:grid-cols-[1fr_auto] items-center rounded-xl border border-slate-200 bg-white p-3">
+                              <div>
+                                <div className="font-medium text-slate-950">{material.title}</div>
+                                <div className="text-xs text-slate-500">{material.type} • {material.size_bytes ? `${(material.size_bytes / 1024).toFixed(1)} KB` : "Unknown size"}</div>
+                              </div>
+                              <a href={material.url} target="_blank" rel="noreferrer" className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white">
+                                Download
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No materials found for this course.</p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-950">Student progress</h3>
+                  <span className="text-xs text-slate-500">{courseStudentProgressQuery.isFetching ? "Refreshing..." : ""}</span>
+                </div>
+                {courseStudentProgressQuery.isLoading ? (
+                  <p className="text-sm text-slate-500">Loading progress...</p>
+                ) : courseStudentProgressQuery.data?.length ? (
+                  <div className="space-y-3">
+                    {courseStudentProgressQuery.data.map((item) => (
+                      <div key={item.student_id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="font-semibold text-slate-950">{item.student_name}</div>
+                            <div className="text-xs text-slate-500">{item.enrollment_status}</div>
+                          </div>
+                          <div className="text-sm font-semibold text-slate-950">{item.progress_percent}%</div>
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500">{item.lessons_completed}/{item.total_lessons} lessons completed</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No student progress found for this course.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

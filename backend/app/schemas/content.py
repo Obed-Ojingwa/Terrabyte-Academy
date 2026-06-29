@@ -49,6 +49,7 @@ class EventResponse(BaseModel):
     location: Optional[str] = None
     link: Optional[str] = None
     is_online: bool
+    created_by: Optional[UUID] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

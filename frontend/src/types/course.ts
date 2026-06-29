@@ -60,3 +60,37 @@ export interface Lesson {
   is_completed?: boolean;
   materials?: Material[];
 }
+
+export interface LessonMaterial {
+  id: string;
+  title: string;
+  type: string;
+  s3_key: string;
+  url: string;
+  is_downloadable: boolean;
+  size_bytes?: number;
+  created_at: string;
+}
+
+export interface CourseMaterialResponse {
+  lesson_id: string;
+  lesson_title: string;
+  materials: LessonMaterial[];
+}
+
+export interface StudentCourseProgress {
+  student_id: string;
+  student_name: string;
+  enrollment_status: "pending" | "active" | "completed";
+  progress_percent: number;
+  lessons_completed: number;
+  total_lessons: number;
+  enrolled_at: string;
+  completed_at?: string | null;
+}
+
+export interface StudentProgressResponse {
+  student_id: string;
+  student_name: string;
+  progress: StudentCourseProgress[];
+}

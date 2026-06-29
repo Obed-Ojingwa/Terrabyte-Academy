@@ -68,6 +68,7 @@ class CourseUpdate(BaseModel):
     level: Optional[str] = None
     duration_weeks: Optional[int] = None
     is_published: Optional[bool] = None
+    tutor_id: Optional[UUID] = None
 
 
 class MaterialResponse(BaseModel):
