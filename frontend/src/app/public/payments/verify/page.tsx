@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import PublicHeader from "@/components/ui/PublicHeader";
 import api from "@/lib/api";
 import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 
-export default function VerifyPaymentPage() {
+function VerifyPaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reference = searchParams?.get("reference") || "";
@@ -81,5 +81,28 @@ export default function VerifyPaymentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="page-light min-h-screen pt-20 text-slate-950">
+          <PublicHeader />
+          <div className="max-w-4xl mx-auto px-6 py-20">
+            <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm text-center">
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-brand-500/10 text-brand-600">
+                <Loader2 className="h-10 w-10 animate-spin" />
+              </div>
+              <h1 className="text-3xl font-black text-slate-950">Payment verification</h1>
+              <p className="mt-4 text-slate-600">Loading verification details…</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <VerifyPaymentContent />
+    </Suspense>
   );
 }

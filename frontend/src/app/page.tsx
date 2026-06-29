@@ -273,20 +273,41 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-20 md:py-28 px-6 md:px-12 bg-blue-600">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-4">Start Today</p>
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight leading-tight">Ready to transform your career?</h2>
-          <p className="text-blue-100 text-base leading-relaxed mb-8 max-w-lg mx-auto">Join thousands of professionals across Nigeria who have built real, in-demand tech skills with Terrabyte Academy.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register" className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-4 rounded-2xl text-sm transition-all shadow-lg">Enroll Now — It is Simple →</Link>
-            <Link href="/contact" className="inline-flex items-center justify-center gap-2 border border-white/30 hover:border-white/60 text-white font-semibold px-8 py-4 rounded-2xl text-sm transition-all">Talk to Us First</Link>
-          </div>
-        </div>
-      </section>
+<section className="py-20 md:py-28 px-6 md:px-12">
+  <div className="mx-auto max-w-6xl rounded-3xl bg-blue-600 px-8 py-16 md:px-16 md:py-20 text-center shadow-2xl">
+    <p className="mb-4 text-xs font-bold uppercase tracking-widest text-blue-200">
+      Start Today
+    </p>
+
+    <h2 className="mb-6 text-3xl md:text-5xl font-black text-white leading-tight">
+      Ready to transform your career?
+    </h2>
+
+    <p className="mx-auto mb-10 max-w-2xl text-blue-100">
+      Join thousands of professionals across Nigeria who have built real,
+      in-demand tech skills with Terrabyte Academy.
+    </p>
+
+    <div className="flex flex-col sm:flex-row justify-center gap-4">
+      <Link
+        href="/auth/register"
+        className="inline-flex items-center justify-center rounded-2xl bg-white px-8 py-4 font-bold text-blue-700 hover:bg-gray-50"
+      >
+        Enroll Now — It's Simple →
+      </Link>
+
+      <Link
+        href="/contact"
+        className="inline-flex items-center justify-center rounded-2xl border border-white/30 px-8 py-4 font-semibold text-white hover:border-white/60"
+      >
+        Talk to Us First
+      </Link>
+    </div>
+  </div>
+</section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-blue-200 text-gray-800 px-6 md:px-12 pt-16 pb-8">
+      <footer className="bg-white-200 text-gray-800 px-6 md:px-12 pt-16 pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
 
@@ -306,8 +327,8 @@ export default function HomePage() {
                 </div>
               </Link>
 
-              <p className="text-gray-400 text-sm leading-relaxed mb-5">Nigeria's premier technology learning platform, building career-ready professionals through practical, industry-focused training.</p>
-              <p className="text-gray-500 text-xs mb-4">RC: 1234567 · Lagos, Nigeria</p>
+              <p className="text-black-400 text-sm leading-relaxed mb-5">Nigeria's premier technology learning platform, building career-ready professionals through practical, industry-focused training.</p>
+              <p className="text-black-500 text-xs mb-4">RC: 1234567 · Lagos, Nigeria</p>
               <div className="flex gap-2 flex-wrap">
                 {[{label:"WhatsApp",href:"https://wa.me/234XXXXXXXXXX"},{label:"LinkedIn",href:"#"},{label:"Twitter",href:"#"},{label:"Instagram",href:"#"}].map((s)=>(
                   <a key={s.label} href={s.href} className="text-xs border border-white/10 text-gray-400 hover:text-white hover:border-white/25 px-3 py-1.5 rounded-lg transition-all">{s.label}</a>
@@ -316,7 +337,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">Popular Courses</p>
+              <p className="text-xs font-bold text-black-400 uppercase tracking-widest mb-5">Popular Courses</p>
               <div className="flex flex-col gap-3">
                 {[
                   {label:"Cybersecurity Fundamentals",href:"/public/courses/cybersecurity-fundamentals"},
@@ -325,12 +346,12 @@ export default function HomePage() {
                   {label:"Full-Stack Web Development",href:"/public/courses/fullstack-web-development"},
                   {label:"UI/UX Design Mastery",href:"/public/courses/uiux-design-mastery"},
                   {label:"Network Administration",href:"/public/courses/network-administration"},
-                ].map((l)=>(<Link key={l.href} href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors leading-snug">{l.label}</Link>))}
+                ].map((l)=>(<Link key={l.href} href={l.href} className="text-sm text-black-400 hover:text-blue transition-colors leading-snug">{l.label}</Link>))}
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">Quick Links</p>
+              <p className="text-xs font-bold text-black-400 uppercase tracking-widest mb-5">Quick Links</p>
               <div className="flex flex-col gap-3">
                 {[
                   {label:"All Courses",href:"/public/courses"},
@@ -341,26 +362,26 @@ export default function HomePage() {
                   {label:"Verify Certificate",href:"/public/verify-certificate"},
                   {label:"Student Login",href:"/auth/login"},
                   {label:"Create Account",href:"/auth/register"},
-                ].map((l)=>(<Link key={l.href} href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">{l.label}</Link>))}
+                ].map((l)=>(<Link key={l.href} href={l.href} className="text-sm text-black-400 hover:text-blue transition-colors">{l.label}</Link>))}
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">Contact Us</p>
+              <p className="text-xs font-bold text-black-400 uppercase tracking-widest mb-5">Contact Us</p>
               <div className="flex flex-col gap-4">
-                <a href="mailto:hello@terrabyteacademy.com" className="flex items-start gap-3 text-sm text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                <a href="mailto:hello@terrabyteacademy.com" className="flex items-start gap-3 text-sm text-black-400 hover:text-blue transition-colors">
+                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-black-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
                   hello@terrabyteacademy.com
                 </a>
-                <a href="https://wa.me/234XXXXXXXXXX" className="flex items-start gap-3 text-sm text-gray-400 hover:text-white transition-colors">
+                <a href="https://wa.me/234XXXXXXXXXX" className="flex items-start gap-3 text-sm text-black-400 hover:text-blue-500 transition-colors">
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
                   +234 800 000 0000
                 </a>
-                <span className="flex items-start gap-3 text-sm text-gray-400">
+                <span className="flex items-start gap-3 text-sm text-black-400">
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
                   Victoria Island, Lagos, Nigeria
                 </span>
-                <span className="flex items-start gap-3 text-sm text-gray-400">
+                <span className="flex items-start gap-3 text-sm text-black-400">
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg>
                   Mon–Fri, 9am – 6pm WAT
                 </span>
@@ -375,7 +396,7 @@ export default function HomePage() {
           <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-gray-500 text-center sm:text-left">© {new Date().getFullYear()} Terrabyte Academy. RC: 1234567. All rights reserved.</p>
             <div className="flex gap-5">
-              {["Privacy Policy","Terms of Service","Cookie Policy"].map((l)=>(<a key={l} href="#" className="text-xs text-gray-500 hover:text-white transition-colors">{l}</a>))}
+              {["Privacy Policy","Terms of Service","Cookie Policy"].map((l)=>(<a key={l} href="#" className="text-xs text-black-500 hover:text-blue-500 transition-colors">{l}</a>))}
             </div>
           </div>
         </div>

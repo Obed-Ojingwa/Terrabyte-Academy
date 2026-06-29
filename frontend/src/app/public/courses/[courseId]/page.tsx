@@ -11,10 +11,23 @@ import { useCourse } from "@/hooks/useCourses";
 import api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+type CourseModuleLesson = {
+  id: string;
+  title: string;
+  duration_min?: number;
+};
+
+type CourseModule = {
+  id: string;
+  title: string;
+  lessons: CourseModuleLesson[];
+};
+
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const courseId = params?.courseId || "";
+  const rawCourseId = Array.isArray(params?.courseId) ? params.courseId[0] : params?.courseId;
+  const courseId = typeof rawCourseId === "string" ? rawCourseId : "";
   const { data: course, isLoading, isError } = useCourse(courseId);
 
   const enrollMutation = useMutation({
@@ -120,7 +133,7 @@ export default function CourseDetailPage() {
                   <p className="text-sm text-slate-500">Lesson structure is being prepared. Check back later for a full syllabus.</p>
                 ) : (
                   <div className="space-y-4">
-                    {course.modules.map((module) => (
+                    {(course.modules as CourseModule[] | undefined)?.map((module: CourseModule) => (
                       <div key={module.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="flex items-center justify-between gap-4">
                           <div>
@@ -161,10 +174,10 @@ export default function CourseDetailPage() {
                     <button
                       type="button"
                       onClick={() => enrollMutation.mutate()}
-                      disabled={enrollMutation.isLoading}
+                      disabled={enrollMutation.isPending}
                       className="w-full rounded-2xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-4 transition-all"
                     >
-                      {enrollMutation.isLoading ? "Enrolling..." : "Enroll for free"}
+                      {enrollMutation.isPending ? "Enrolling..." : "Enroll for free"}
                     </button>
                   ) : (
                     <PaystackButton courseId={course.id} amount={course.price} courseName={course.title} mode={course.mode} />
