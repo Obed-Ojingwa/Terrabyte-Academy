@@ -10,3 +10,4 @@ from app.models.blog import BlogPost
 from app.models.event import Event
 from app.models.forum import ForumThread, ForumReply
 from app.models.settings import PlatformSetting, CertificateTemplate, ActivityLog
+from app.models.feedback import Feedback

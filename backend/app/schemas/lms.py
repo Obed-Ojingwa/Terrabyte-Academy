@@ -204,3 +204,33 @@ class NotificationResponse(BaseModel):
     user: Optional[UserSummary] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackCreate(BaseModel):
+    course_id: Optional[UUID] = None
+    tutor_id: Optional[UUID] = None
+    rating: Optional[int] = None
+    comments: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackResponse(BaseModel):
+    id: UUID
+    student_id: UUID
+    course_id: Optional[UUID] = None
+    tutor_id: Optional[UUID] = None
+    rating: Optional[int] = None
+    comments: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StudentDashboardResponse(BaseModel):
+    enrollments: list[EnrollmentResponse] = Field(default_factory=list)
+    upcoming_events: list[EventResponse] = Field(default_factory=list)
+    assignments_due: list[AssignmentResponse] = Field(default_factory=list)
+    recent_exam_results: list[ExamResultResponse] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
