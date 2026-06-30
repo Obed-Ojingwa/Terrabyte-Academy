@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
-import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, Settings, LogOut, BarChart2, Upload, CheckSquare, Newspaper, Calendar, User } from "lucide-react";
+import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, Settings, LogOut, BarChart2, BarChart3, Upload, CheckSquare, Newspaper, Calendar, User } from "lucide-react";
 
 const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
   student: [
