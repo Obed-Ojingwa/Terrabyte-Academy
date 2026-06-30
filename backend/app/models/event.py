@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from sqlalchemy import String, Boolean, ForeignKey, Text, DateTime
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -21,5 +22,5 @@ class Event(Base):
     course_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by_user: Mapped["User" | None] = relationship(foreign_keys=[created_by])
-    course: Mapped["Course" | None] = relationship(foreign_keys=[course_id])
+    created_by_user: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by])
+    course: Mapped[Optional["Course"]] = relationship(foreign_keys=[course_id])

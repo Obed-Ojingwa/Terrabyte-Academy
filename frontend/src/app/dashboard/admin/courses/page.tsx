@@ -62,14 +62,12 @@ export default function AdminCoursesPage() {
     queryKey: ["admin-course-materials", selectedCourseId],
     queryFn: async () => (await api.get(`/admin/courses/${selectedCourseId}/materials`)).data,
     enabled: !!selectedCourseId,
-    onError: () => toast.error("Unable to load course materials"),
   });
 
   const courseStudentProgressQuery = useQuery<StudentCourseProgress[]>({
     queryKey: ["admin-course-students-progress", selectedCourseId],
     queryFn: async () => (await api.get(`/admin/courses/${selectedCourseId}/students/progress`)).data,
     enabled: !!selectedCourseId,
-    onError: () => toast.error("Unable to load course student progress"),
   });
 
   const createMutation = useMutation({
