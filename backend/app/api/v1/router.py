@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.api.v1 import auth, users, courses, payments, certificates, notifications, analytics, blog, events, assignments, exams, enrollments, course_content, lesson_materials, forum, storage, admin, settings
+from app.api.v1 import tutor
 
 api_router = APIRouter()
 api_router.include_router(auth.router)
@@ -20,3 +21,4 @@ api_router.include_router(forum.router)
 api_router.include_router(storage.router)
 api_router.include_router(admin.router)
 api_router.include_router(settings.router)
+api_router.include_router(tutor.router)

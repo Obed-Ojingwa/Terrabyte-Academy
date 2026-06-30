@@ -44,6 +44,7 @@ class EventResponse(BaseModel):
     title: str
     description: Optional[str] = None
     type: Optional[str] = None
+    course_id: Optional[UUID] = None
     start_date: datetime
     end_date: Optional[datetime] = None
     location: Optional[str] = None
@@ -57,6 +58,7 @@ class EventResponse(BaseModel):
 
 class EventCreate(BaseModel):
     title: str
+    course_id: Optional[UUID] = None
     description: Optional[str] = None
     type: Optional[str] = None
     start_date: datetime
@@ -68,6 +70,7 @@ class EventCreate(BaseModel):
 
 class EventUpdate(BaseModel):
     title: Optional[str] = None
+    course_id: Optional[UUID] = None
     description: Optional[str] = None
     type: Optional[str] = None
     start_date: Optional[datetime] = None

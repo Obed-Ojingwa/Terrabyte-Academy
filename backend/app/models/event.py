@@ -18,6 +18,8 @@ class Event(Base):
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     link: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_online: Mapped[bool] = mapped_column(Boolean, default=True)
+    course_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     created_by_user: Mapped["User" | None] = relationship(foreign_keys=[created_by])
+    course: Mapped["Course" | None] = relationship(foreign_keys=[course_id])
