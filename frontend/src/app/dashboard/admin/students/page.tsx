@@ -32,7 +32,6 @@ export default function AdminStudentsPage() {
     queryKey: ["admin-student-progress", selectedUserId],
     queryFn: async () => (await api.get(`/admin/students/${selectedUserId}/progress`)).data,
     enabled: !!selectedUserId,
-    onError: () => toast.error("Unable to load student progress"),
   });
 
   return (
