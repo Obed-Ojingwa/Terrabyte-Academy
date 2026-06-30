@@ -25,6 +25,15 @@ export default function StudentLearningPage() {
     onError: () => toast.error("Unable to update progress"),
   });
 
+  const submitExamMutation = useMutation({
+    mutationFn: async ({ examId, answers }: { examId: string; answers: Record<string, string> }) => (await api.post(`/exams/${examId}/results`, { answers })).data,
+    onSuccess: () => {
+      toast.success("Exam submitted");
+      qc.invalidateQueries({ queryKey: ["student-exams"] });
+    },
+    onError: () => toast.error("Unable to submit exam"),
+  });
+
   const enrollments = useMemo(() => enrollmentsData ?? [], [enrollmentsData]);
   const assignments = useMemo(() => {
     const courseId = selectedEnrollment ? enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment)?.course_id : null;
@@ -99,7 +108,7 @@ export default function StudentLearningPage() {
                 <div className="mt-1 text-xs text-slate-500">{exam.duration_min} min • Pass {exam.pass_score}</div>
                 <div className="mt-3 flex items-center gap-2">
                   <input value={examAnswers[exam.id] ?? ""} onChange={(e) => setExamAnswers((prev) => ({ ...prev, [exam.id]: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950" placeholder="Answer" />
-                  <button onClick={() => toast.success("Exam answer saved")} className="rounded-xl border border-brand-500/20 bg-brand-50 px-3 py-2 text-xs text-brand-700">Save</button>
+                  <button onClick={() => submitExamMutation.mutate({ examId: exam.id, answers: { answer: examAnswers[exam.id] ?? "" } })} className="rounded-xl border border-brand-500/20 bg-brand-50 px-3 py-2 text-xs text-brand-700">Submit</button>
                 </div>
               </div>
             ))}

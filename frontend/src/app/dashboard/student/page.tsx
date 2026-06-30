@@ -11,7 +11,7 @@ export default function StudentDashboard() {
   const qc = useQueryClient();
   const { user } = useAuthStore();
   const { data: stats } = useQuery({ queryKey: ["student-stats"], queryFn: async () => (await api.get("/analytics/student/stats")).data });
-  const { data: enrollmentsData } = useQuery({ queryKey: ["my-enrollments"], queryFn: async () => (await api.get("/enrollments")).data });
+  const { data: dashboard } = useQuery({ queryKey: ["student-dashboard"], queryFn: async () => (await api.get("/student/dashboard")).data });
   const { data: certificates = [] } = useQuery({ queryKey: ["student-certificates"], queryFn: async () => (await api.get("/certificates/me")).data });
   const nextSteps = stats?.next_up ?? [];
 
@@ -21,7 +21,7 @@ export default function StudentDashboard() {
     onError: () => toast.error("Unable to request certificate")
   });
 
-  const enrollments = useMemo(() => enrollmentsData ?? [], [enrollmentsData]);
+  const enrollments = useMemo(() => dashboard?.enrollments ?? [], [dashboard]);
 
   return (
     <div className="p-6 space-y-8 page-light min-h-full text-slate-950">
@@ -38,6 +38,10 @@ export default function StudentDashboard() {
         <StatCard label="Completed" value={stats?.completed ?? 0} icon={<CheckCircle size={16}/>} color="green" />
         <StatCard label="Assignments" value={stats?.assignments ?? 0} icon={<Trophy size={16}/>} color="yellow" />
         <StatCard label="Certificates" value={stats?.certificates ?? 0} icon={<Award size={16}/>} color="purple" />
+      </div>
+
+      <div className="flex justify-end">
+        <a href="/dashboard/student/feedback" className="text-sm text-brand-600 hover:underline">Submit course feedback →</a>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.7fr] gap-4">

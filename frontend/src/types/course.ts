@@ -94,3 +94,63 @@ export interface StudentProgressResponse {
   student_name: string;
   progress: StudentCourseProgress[];
 }
+
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  type?: string;
+  course_id?: string | null;
+  start_date: string;
+  end_date?: string | null;
+  location?: string | null;
+  link?: string | null;
+  is_online: boolean;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface Assignment {
+  id: string;
+  course_id: string;
+  tutor_id?: string | null;
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+  max_score: number;
+  created_at: string;
+}
+
+export interface ExamResult {
+  id: string;
+  exam_id: string;
+  student_id: string;
+  score?: number | null;
+  answers?: Record<string, any> | null;
+  passed: boolean;
+  taken_at: string;
+}
+
+export interface FeedbackCreate {
+  course_id?: string | null;
+  tutor_id?: string | null;
+  rating?: number | null;
+  comments?: string | null;
+}
+
+export interface FeedbackResponse {
+  id: string;
+  student_id: string;
+  course_id?: string | null;
+  tutor_id?: string | null;
+  rating?: number | null;
+  comments?: string | null;
+  created_at: string;
+}
+
+export interface StudentDashboardResponse {
+  enrollments: Enrollment[];
+  upcoming_events: Event[];
+  assignments_due: Assignment[];
+  recent_exam_results: ExamResult[];
+}
