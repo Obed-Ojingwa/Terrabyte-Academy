@@ -52,7 +52,7 @@ export default function Sidebar() {
   const handleLogout = () => { logout(); router.push("/auth/login"); };
 
   return (
-    <aside className="w-64 bg-[#020a16] flex flex-col h-full shrink-0 border-r border-white/[0.05]">
+    <aside className="w-64 bg-[#B1B1BD] flex flex-col h-full shrink-0 border-r border-white/[0.05]">
       <div className="p-5 border-b border-white/[0.05]">
         <BrandLogo />
       </div>
