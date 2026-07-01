@@ -17,9 +17,6 @@ export default function AdminStudentProgressPage() {
     queryKey: ["admin-student-progress", selectedUserId],
     queryFn: async () => (await api.get(`/admin/students/${selectedUserId}/progress`)).data,
     enabled: !!selectedUserId,
-    onError: () => {
-      // intentionally silent; page displays fallback text
-    },
   });
 
   const users = useMemo(() => (data?.items ?? []).filter((user: any) => user.role?.name === "student"), [data]);
