@@ -79,6 +79,8 @@ export interface CourseMaterialResponse {
 }
 
 export interface StudentCourseProgress {
+  course_id: string;
+  course_title: string;
   student_id: string;
   student_name: string;
   enrollment_status: "pending" | "active" | "completed";
