@@ -72,7 +72,7 @@ export default function FeedbackPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleSubmit} disabled={submitMutation.isLoading} className="rounded-xl bg-brand-500 px-4 py-2 text-white">Submit feedback</button>
+          <button onClick={handleSubmit} disabled={submitMutation.status === "loading"} className="rounded-xl bg-brand-500 px-4 py-2 text-white">Submit feedback</button>
         </div>
       </div>
     </div>
