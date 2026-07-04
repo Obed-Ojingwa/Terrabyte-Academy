@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, Settings, LogOut, BarChart2, BarChart3, Upload, CheckSquare, Newspaper, Calendar, User } from "lucide-react";
 
+
 const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
   student: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/student" },
@@ -50,6 +51,7 @@ export default function Sidebar() {
   const navItems = navMap[role] || navMap.student;
 
   const handleLogout = () => { logout(); router.push("/auth/login"); };
+
 
   return (
     <aside className="w-64 bg-[#B1B1BD] flex flex-col h-full shrink-0 border-r border-white/[0.05]">
