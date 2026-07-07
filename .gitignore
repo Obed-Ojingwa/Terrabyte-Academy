@@ -6,7 +6,6 @@ __pycache__/
 *.py[cod]
 *.pyo
 venv/
-.env
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
@@ -17,8 +16,6 @@ backend/seed_data.py
 # Node
 node_modules/
 .next/
-.env.local
-.env.production
 out/
 build/
 
@@ -30,7 +27,6 @@ build/
 Thumbs.db
 
 # IDE
-.vscode/
 .idea/
 *.swp
 
@@ -38,3 +34,4 @@ Thumbs.db
 ssl/*.pem
 ssl/*.key
 ssl/*.crt
+config.bat
