@@ -9,7 +9,6 @@ import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, 
 
 const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
   student: [
-    
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/student" },
     { label: "My Courses", icon: BookOpen, href: "/dashboard/student/courses" },
     { label: "Learning", icon: BookOpen, href: "/dashboard/student/learning" },
