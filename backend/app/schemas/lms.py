@@ -234,3 +234,43 @@ class StudentDashboardResponse(BaseModel):
     recent_exam_results: list[ExamResultResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class StudentProfileResponse(BaseModel):
+    # Personal Information
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+    is_verified: bool
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    # Enrolled Courses
+    enrolled_courses: list[EnrollmentResponse] = Field(default_factory=list)
+
+    # Learning Progress (aggregated)
+    total_courses_enrolled: int = 0
+    total_courses_completed: int = 0
+    overall_progress_percentage: int = 0
+
+    # Assignment History
+    assignment_submissions: list[SubmissionResponse] = Field(default_factory=list)
+    total_assignments_submitted: int = 0
+    total_assignments_graded: int = 0
+    average_assignment_score: Optional[float] = None
+
+    # Exam Results
+    exam_results: list[ExamResultResponse] = Field(default_factory=list)
+    total_exams_taken: int = 0
+    total_exams_passed: int = 0
+    average_exam_score: Optional[float] = None
+
+    # Certificates Obtained
+    certificates: list[CertificateResponse] = Field(default_factory=list)
+    total_certificates_earned: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
