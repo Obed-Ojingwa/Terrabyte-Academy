@@ -18,6 +18,7 @@ class ForumThread(Base):
     author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     is_closed: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_question: Mapped[bool] = mapped_column(Boolean, default=False)  # Thread is a question
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

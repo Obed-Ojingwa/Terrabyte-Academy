@@ -22,6 +22,7 @@ class ForumThreadResponse(BaseModel):
     author_id: UUID
     is_pinned: bool
     is_closed: bool
+    is_question: bool = False
     created_at: datetime
     updated_at: datetime
     replies: list[ForumReplyResponse] = []
@@ -33,6 +34,7 @@ class ForumThreadCreate(BaseModel):
     title: str
     body: str
     course_id: Optional[UUID] = None
+    is_question: bool = False
 
 
 class ForumReplyCreate(BaseModel):

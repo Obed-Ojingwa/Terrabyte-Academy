@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from uuid import UUID
 
 from app.api.deps import get_current_user
 from app.database import get_db
@@ -12,12 +13,18 @@ router = APIRouter(prefix="/forum", tags=["Forum"])
 
 
 @router.get("/threads", response_model=list[ForumThreadResponse])
-async def list_threads(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(ForumThread)
-        .options(joinedload(ForumThread.replies))
-        .order_by(ForumThread.is_pinned.desc(), ForumThread.created_at.desc())
-    )
+async def list_threads(
+    course_id: UUID = Query(None, description="Filter by course ID"),
+    is_question: bool = Query(None, description="Filter by question threads"),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(ForumThread).options(joinedload(ForumThread.replies))
+    if course_id is not None:
+        query = query.where(ForumThread.course_id == course_id)
+    if is_question is not None:
+        query = query.where(ForumThread.is_question == is_question)
+    query = query.order_by(ForumThread.is_pinned.desc(), ForumThread.created_at.desc())
+    result = await db.execute(query)
     return result.scalars().all()
 
 
