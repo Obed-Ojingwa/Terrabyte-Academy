@@ -1,4 +1,5 @@
 import re
+from typing import Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
@@ -20,8 +21,17 @@ class CourseService:
         self.db = db
         self._cache = TTLCache(ttl_seconds=30)
 
-    async def list_courses(self, search, category, mode, level, page, page_size) -> CourseListResponse:
-        cache_key = f"courses:{search}:{category}:{mode}:{level}:{page}:{page_size}"
+    async def list_courses(
+        self,
+        search: Optional[str],
+        category: Optional[str],
+        mode: Optional[str],
+        level: Optional[str],
+        sort_by: Optional[str],
+        page: int,
+        page_size: int
+    ) -> CourseListResponse:
+        cache_key = f"courses:{search}:{category}:{mode}:{level}:{sort_by}:{page}:{page_size}"
         cached = self._cache.get(cache_key)
         if cached is not None:
             return cached
@@ -40,6 +50,31 @@ class CourseService:
         if level:
             base_query = base_query.where(Course.level == level)
 
+        # Apply sorting
+        if sort_by == "popular":
+            # Subquery to count enrollments per course
+            enrollment_count_subq = (
+                select(Enrollment.course_id, func.count(Enrollment.id).label("enrollment_count"))
+                .group_by(Enrollment.course_id)
+                .subquery()
+            )
+            base_query = (
+                base_query.outerjoin(
+                    enrollment_count_subq, Course.id == enrollment_count_subq.c.course_id
+                )
+                .order_by(
+                    enrollment_count_subq.c.enrollment_count.desc().nullslast(),
+                    Course.created_at.desc(),  # secondary sort by newest for tie-breaking
+                )
+            )
+        elif sort_by == "title_asc":
+            base_query = base_query.order_by(Course.title.asc())
+        elif sort_by == "title_desc":
+            base_query = base_query.order_by(Course.title.desc())
+        else:
+            # Default to newest first
+            base_query = base_query.order_by(Course.created_at.desc())
+
         count_query = select(func.count()).select_from(base_query.subquery())
         total = (await self.db.execute(count_query)).scalar_one()
 
@@ -47,11 +82,45 @@ class CourseService:
         courses = (await self.db.execute(paged_query)).scalars().all()
         response = CourseListResponse(
             items=[CourseResponse.model_validate(c) for c in courses],
-            total=total, page=page, page_size=page_size,
+            total=total,
+            page=page,
+            page_size=page_size,
             total_pages=(total + page_size - 1) // page_size,
         )
         self._cache.set(cache_key, response)
         return response
+
+    async def get_course_filters(self) -> Dict[str, List[str]]:
+        # Get distinct non-null categories, levels, modes for published courses
+        categories = (
+            await self.db.execute(
+                select(Course.category)
+                .where(Course.is_published == True, Course.category.is_not(None))
+                .distinct()
+                .order_by(Course.category)
+            )
+        ).scalars().all()
+        levels = (
+            await self.db.execute(
+                select(Course.level)
+                .where(Course.is_published == True, Course.level.is_not(None))
+                .distinct()
+                .order_by(Course.level)
+            )
+        ).scalars().all()
+        modes = (
+            await self.db.execute(
+                select(Course.mode)
+                .where(Course.is_published == True, Course.mode.is_not(None))
+                .distinct()
+                .order_by(Course.mode)
+            )
+        ).scalars().all()
+        return {
+            "categories": [c for c in categories if c],
+            "levels": [l for l in levels if l],
+            "modes": [m for m in modes if m],
+        }
 
     async def list_manageable_courses(self, user) -> list[CourseResponse]:
         role_name = user.role.name if getattr(user, "role", None) else None

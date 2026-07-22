@@ -14,15 +14,20 @@ async def list_courses(
     category: Optional[str] = None,
     mode: Optional[str] = None,
     level: Optional[str] = None,
+    sort_by: Optional[str] = Query(None, description="Sort by: newest, popular, title_asc, title_desc"),
     page: int = Query(1, ge=1),
     page_size: int = Query(12, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    return await CourseService(db).list_courses(search, category, mode, level, page, page_size)
+    return await CourseService(db).list_courses(search, category, mode, level, sort_by, page, page_size)
 
 @router.get("/suggestions", response_model=list[CourseResponse])
 async def popular_courses(limit: int = Query(6, ge=1, le=12), db: AsyncSession = Depends(get_db)):
     return await CourseService(db).list_popular_courses(limit)
+
+@router.get("/filters", response_model=dict)
+async def get_course_filters(db: AsyncSession = Depends(get_db)):
+    return await CourseService(db).get_course_filters()
 
 @router.get("/me", response_model=list[CourseResponse])
 async def list_my_courses(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
