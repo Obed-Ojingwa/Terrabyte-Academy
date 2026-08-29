@@ -7,6 +7,44 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { User, Mail, Phone, Calendar, TrendingUp, List, FileText, Award } from "lucide-react";
 
+type EnrolledCourse = {
+  id: string;
+  progress?: number;
+  course?: {
+    title?: string;
+  };
+};
+
+type Certificate = {
+  id: string;
+  issued_at?: string;
+  course?: {
+    title?: string;
+  };
+};
+
+type StudentProfile = {
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
+  created_at?: string;
+  is_verified?: boolean;
+  role?: { name?: string };
+  total_courses_enrolled: number;
+  total_courses_completed: number;
+  total_assignments_submitted: number;
+  total_assignments_graded: number;
+  average_assignment_score?: number | null;
+  total_exams_taken: number;
+  total_exams_passed: number;
+  total_certificates_earned: number;
+  enrolled_courses: EnrolledCourse[];
+  certificates: Certificate[];
+};
+
 export default function StudentProfilePage() {
   const { updateUser } = useAuthStore();
   const queryClient = useQueryClient();
@@ -193,9 +231,8 @@ export default function StudentProfilePage() {
             </div>
             <div className="mt-2 h-1">
               <div
-                className={`h-full w-full rounded bg-slate-200`}
+                className={`h-full rounded bg-slate-200 transition-all duration-500 ${stat.text}`}
                 style={{ width: `${stat.percentage}%` }}
-                className={`transition-all duration-500 ${stat.text}`}
               ></div>
             </div>
             <p className="mt-1 text-xs text-slate-500">{stat.percentage}%</p>
@@ -310,18 +347,29 @@ export default function StudentProfilePage() {
 
             {profile.total_courses_enrolled > 0 ? (
               <div className="space-y-4">
-                {profile.enrolled_courses.map((course) => (
+                {profile.enrolled_courses.map((course: EnrolledCourse) => (
                   <div key={course.id} className="rounded-xl border border-slate-200 bg-white p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h3 className="font-semibold text-slate-900">{course.course?.title || 'Unnamed Course'}</h3>
                         <p className="mt-1 text-xs text-slate-500">Progress: {course.progress || 0}%</p>
                       </div>
-                      <div className="w-3 h-3 rounded-full {course.progress >= 100 ? 'bg-green-500' : course.progress >= 80 ? 'bg-yellow-400' : course.progress >= 50 ? 'bg-orange-400' : 'bg-red-400'}"></div>
+                      <div
+                        className={`h-3 w-3 rounded-full ${
+                          (course.progress ?? 0) >= 100
+                            ? 'bg-green-500'
+                            : (course.progress ?? 0) >= 80
+                              ? 'bg-yellow-400'
+                              : (course.progress ?? 0) >= 50
+                                ? 'bg-orange-400'
+                                : 'bg-red-400'
+                        }`}
+                      />
                     </div>
                     <div className="h-1.5 bg-slate-200 rounded">
                       <div
-                        className={`h-full w-[${course.progress || 0}%] rounded bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-300`}
+                        className="h-full rounded bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-300"
+                        style={{ width: `${course.progress || 0}%` }}
                       ></div>
                     </div>
                   </div>
@@ -381,7 +429,7 @@ export default function StudentProfilePage() {
                 <>
                   <p className="text-sm text-slate-600 mb-2">You have earned {profile.total_certificates_earned} certificate{profile.total_certificates_earned !== 1 ? 's' : ''}!</p>
                   <div className="space-y-2">
-                    {profile.certificates.map((cert) => (
+                    {profile.certificates.map((cert: Certificate) => (
                       <div key={cert.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-white">
                         <Award size={18} className="text-amber-500 flex-shrink-0" />
                         <div className="flex-1">
