@@ -15,12 +15,12 @@ const heroSlides = [
 ];
 
 const courses = [
-  { title: "Cybersecurity Fundamentals", category: "Security", level: "Beginner", price: 75000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=600&q=80&auto=format&fit=crop", levelColor: "bg-green-100 text-green-700", slug: "cybersecurity-fundamentals" },
-  { title: "Data Analysis with Python", category: "Data Science", level: "Intermediate", price: 85000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80&auto=format&fit=crop", levelColor: "bg-amber-100 text-amber-700", slug: "data-analysis-python" },
-  { title: "Cloud Architecture (AWS)", category: "Cloud", level: "Advanced", price: 120000, duration: "12 weeks", thumb: "https://images.unsplash.com/photo-1667984390527-850f63192709?w=600&q=80&auto=format&fit=crop", levelColor: "bg-red-100 text-red-700", slug: "cloud-architecture-aws" },
-  { title: "Full-Stack Web Development", category: "Development", level: "Intermediate", price: 95000, duration: "16 weeks", thumb: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80&auto=format&fit=crop", levelColor: "bg-amber-100 text-amber-700", slug: "fullstack-web-development" },
-  { title: "UI/UX Design Mastery", category: "Design", level: "Beginner", price: 65000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80&auto=format&fit=crop", levelColor: "bg-green-100 text-green-700", slug: "uiux-design-mastery" },
-  { title: "Network Administration", category: "Networking", level: "Intermediate", price: 80000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80&auto=format&fit=crop", levelColor: "bg-amber-100 text-amber-700", slug: "network-administration" },
+  { title: "Cybersecurity Fundamentals", category: "Security", level: "Beginner", price: 75000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?w=600&q=80&auto=format&fit=crop", levelBadge: "Foundation to Beginner", desc: "Browse our catalogue and pick the programme that fits your goals and current skill level.", slug: "cybersecurity-fundamentals" },
+  { title: "Data Analysis with Python", category: "Data Science", level: "Intermediate", price: 85000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80&auto=format&fit=crop", levelBadge: "Foundation to Intermediate", desc: "Browse our catalogue and pick the programme that fits your goals and current skill level.", slug: "data-analysis-python" },
+  { title: "Cloud Architecture (AWS)", category: "Cloud", level: "Advanced", price: 120000, duration: "12 weeks", thumb: "https://images.unsplash.com/photo-1667984390527-850f63192709?w=600&q=80&auto=format&fit=crop", levelBadge: "Foundation to Advanced", desc: "Browse our catalogue and pick the programme that fits your goals and current skill level.", slug: "cloud-architecture-aws" },
+  { title: "Full-Stack Web Development", category: "Development", level: "Intermediate", price: 95000, duration: "16 weeks", thumb: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80&auto=format&fit=crop", levelBadge: "Foundation to Intermediate", desc: "Browse our catalogue and pick the programme that fits your goals and current skill level.", slug: "fullstack-web-development" },
+  { title: "UI/UX Design Mastery", category: "Design", level: "Beginner", price: 65000, duration: "8 weeks", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80&auto=format&fit=crop", levelBadge: "Foundation to Beginner", desc: "Browse our catalogue and pick the programme that fits your goals and current skill level.", slug: "uiux-design-mastery" },
+  { title: "Network Administration", category: "Networking", level: "Intermediate", price: 80000, duration: "10 weeks", thumb: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80&auto=format&fit=crop", levelBadge: "Foundation to Intermediate", desc: "Browse our catalogue and pick the programme that fits your goals and current skill level.", slug: "network-administration" },
 ];
 
 const testimonials = [
@@ -36,6 +36,19 @@ const stats = [
   { value: "95%", label: "Completion Rate" },
   { value: "100%", label: "Job-Ready Graduates" },
 ];
+
+const whyUsFeatures = [
+  { title: "Practical Learning", desc: "Build skills you can apply in the real world.", highlighted: false },
+  { title: "Flexible Learning", desc: "Learn at your own pace, or at our own pace.", highlighted: true },
+  { title: "Expert Guidance", desc: "Learn from experienced professionals.", highlighted: false },
+  { title: "Career-Focused", desc: "Develop skills that match industry needs.", highlighted: false },
+];
+
+const whyUsImages = {
+  top: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80&auto=format&fit=crop",
+  bottomLeft: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80&auto=format&fit=crop",
+  bottomRight: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&q=80&auto=format&fit=crop",
+};
 
 const navLinks = [
   { label: "Courses", href: "/public/courses" },
@@ -85,32 +98,103 @@ function HeroSlider() {
   );
 }
 
+function WhyChooseUsSection() {
+  return (
+    <section className="relative py-20 md:py-28 px-6 md:px-12 bg-white overflow-hidden">
+      {/* decorative wavy lines - top right */}
+      <div className="absolute top-0 right-0 w-[420px] h-[420px] pointer-events-none opacity-80" aria-hidden="true">
+        <svg viewBox="0 0 420 420" fill="none" className="w-full h-full">
+          <path d="M420 0H60c80 0 140 40 210 40S380 0 420 0z" fill="#eef3fb" />
+          <path d="M420 45H100c70 0 120 32 185 32S360 45 420 45z" fill="#dbe7f8" />
+          <path d="M420 90H140c60 0 100 26 160 26S360 90 420 90z" fill="#c8dbf4" />
+        </svg>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* ── LEFT COLUMN ── */}
+          <div>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-5">Why Choose Us</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-10 max-w-md">
+              Gain practical, career-focused skills through flexible learning, expert-led courses, and industry-relevant training designed to help you grow with confidence.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {whyUsFeatures.map((f) => (
+                <div
+                  key={f.title}
+                  className={`rounded-2xl p-6 ${f.highlighted ? "bg-blue-600 text-white" : "bg-blue-50/70 text-gray-900 border border-blue-100/60"}`}
+                >
+                  <h3 className={`font-bold text-base mb-1.5 ${f.highlighted ? "text-white" : "text-gray-900"}`}>{f.title}</h3>
+                  <p className={`text-sm leading-relaxed ${f.highlighted ? "text-blue-100" : "text-gray-500"}`}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── RIGHT COLUMN: IMAGE COLLAGE ── */}
+          <div className="relative">
+            {/* top image */}
+            <div className="rounded-2xl overflow-hidden h-[210px] md:h-[250px] w-full shadow-lg">
+              <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${whyUsImages.top})` }} />
+            </div>
+
+            {/* emblem */}
+            <div className="flex justify-center -mt-9 relative z-10">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white shadow-xl border-4 border-white flex items-center justify-center">
+                <svg className="w-12 h-12 md:w-14 md:h-14" viewBox="0 0 60 60" fill="none">
+                  <circle cx="30" cy="30" r="26" stroke="#2563eb" strokeWidth="3" />
+                  <circle cx="30" cy="30" r="17" stroke="#60a5fa" strokeWidth="2" />
+                  <circle cx="30" cy="30" r="7" fill="#2563eb" />
+                </svg>
+              </div>
+            </div>
+
+            {/* bottom images */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="rounded-2xl overflow-hidden h-[130px] md:h-[160px] shadow-lg">
+                <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${whyUsImages.bottomLeft})` }} />
+              </div>
+              <div className="rounded-2xl overflow-hidden h-[130px] md:h-[160px] shadow-lg">
+                <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${whyUsImages.bottomRight})` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CourseCard({ course }: { course: typeof courses[0] }) {
   return (
-    <Link href={`/public/courses/${course.slug}`} className="group block">
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <div className="relative h-44 overflow-hidden bg-gray-100">
-          <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${course.thumb})` }} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-          <div className="absolute top-3 left-3"><span className="text-[10px] font-semibold text-white/90 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/15 uppercase tracking-wide">{course.category}</span></div>
-          <div className="absolute top-3 right-3"><span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${course.levelColor}`}>{course.level}</span></div>
+    <Link href={`/public/courses/${course.slug}`} className="group block h-full">
+      <div className="h-full flex flex-col bg-[#0a142e] rounded-xl overflow-hidden border border-white/[0.07] shadow-[0_12px_28px_rgba(2,10,22,0.35)] hover:shadow-[0_18px_40px_rgba(2,10,22,0.45)] hover:-translate-y-1 transition-all duration-300">
+        {/* Top banner: thumbnail + title */}
+        <div className="bg-gradient-to-r from-[#243a6e] to-[#17294e] px-4 py-4 flex items-center gap-3.5">
+          <div className="w-[70px] h-[54px] rounded-[8px] overflow-hidden border border-white/25 bg-white/10 shrink-0">
+            <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${course.thumb})` }} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-white text-[13px] font-semibold leading-snug line-clamp-2">{course.title}</p>
+          </div>
         </div>
-        <div className="p-5">
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
-          <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        {/* Body */}
+        <div className="flex-1 p-5 flex flex-col">
+          <h3 className="text-white font-bold text-[15px] leading-snug mb-2.5">{course.title}</h3>
+          <p className="text-slate-400/90 text-[11px] leading-relaxed mb-4">{course.desc}</p>
+          <div className="space-y-2 mb-5">
+            <div className="flex items-center gap-2 text-slate-300/90 text-[11px]">
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
               {course.duration}
-            </span>
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300/90 text-[11px]">
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Certificate included
-            </span>
+            </div>
           </div>
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-            <div><p className="text-[10px] text-gray-400 mb-0.5">Course fee</p><p className="font-bold text-gray-900 text-base">₦{course.price.toLocaleString()}</p></div>
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-3.5 py-1.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">Enroll now</span>
-          </div>
+          <span className="mt-auto inline-block w-fit text-[10px] font-medium text-[#c6cfe4] bg-white/[0.06] border border-white/10 px-3 py-1.5 rounded-full">
+            {course.levelBadge}
+          </span>
         </div>
       </div>
     </Link>
@@ -215,19 +299,14 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── WHY CHOOSE US ── */}
+      <WhyChooseUsSection />
+
       {/* ── COURSES ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-12">
-            <div>
-              <p className="text-blue-600 text-xs font-bold uppercase tracking-widest mb-2">What We Offer</p>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight">Featured Courses</h2>
-              <p className="text-gray-500 text-sm mt-2 max-w-md leading-relaxed">Professionally designed programmes taught by engineers and industry leaders with real working experience.</p>
-            </div>
-            <Link href="/public/courses" className="flex-shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 border border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-4 py-2.5 rounded-xl transition-all">
-              View all courses
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-            </Link>
+          <div className="mb-12">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">Featured Courses</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((c) => (<CourseCard key={c.slug} course={c} />))}
