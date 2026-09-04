@@ -8,8 +8,6 @@ from app.config import settings
 engine_kwargs = {
     "echo": settings.DEBUG,
     "pool_pre_ping": True,
-    "pool_size": 10,
-    "max_overflow": 20,
 }
 
 
@@ -21,37 +19,45 @@ def build_engine_options(database_url: str) -> dict[str, Any]:
     elif database_url.startswith("postgresql+psycopg2://"):
         database_url = database_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
 
-    parsed = urlsplit(database_url)
-    query_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
-    connect_args: dict[str, Any] = {"statement_cache_size": 0}
+    connect_args: dict[str, Any] = {}
+    if database_url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+    else:
+        connect_args = {"statement_cache_size": 0}
+        parsed = urlsplit(database_url)
+        query_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
 
-    if "sslmode" in query_params:
-        query_params["ssl"] = query_params.pop("sslmode")
+        if "sslmode" in query_params:
+            query_params["ssl"] = query_params.pop("sslmode")
 
-    host = parsed.hostname or ""
-    is_pooler_like = any(marker in host for marker in ("pooler", "pgbouncer", "render.com"))
+        host = parsed.hostname or ""
+        is_pooler_like = any(marker in host for marker in ("pooler", "pgbouncer", "render.com"))
 
-    if "ssl" in query_params:
-        ssl_value = query_params.pop("ssl")
-        if isinstance(ssl_value, str) and ssl_value.lower() in {"true", "1", "yes"}:
-            connect_args["ssl"] = True
-        elif isinstance(ssl_value, str) and ssl_value.lower() in {"false", "0", "no", "disable"}:
-            connect_args["ssl"] = False
-        else:
-            connect_args["ssl"] = ssl_value
-    elif host and (
-        host.endswith("supabase.co") or host.endswith("supabase.com") or host.endswith(".pooler.supabase.com") or is_pooler_like
-    ):
-        connect_args["ssl"] = "require"
+        if "ssl" in query_params:
+            ssl_value = query_params.pop("ssl")
+            if isinstance(ssl_value, str) and ssl_value.lower() in {"true", "1", "yes"}:
+                connect_args["ssl"] = True
+            elif isinstance(ssl_value, str) and ssl_value.lower() in {"false", "0", "no", "disable"}:
+                connect_args["ssl"] = False
+            else:
+                connect_args["ssl"] = ssl_value
+        elif host and (
+            host.endswith("supabase.co") or host.endswith("supabase.com") or host.endswith(".pooler.supabase.com") or is_pooler_like
+        ):
+            connect_args["ssl"] = "require"
 
-    normalized_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query_params), parsed.fragment))
-    return {"database_url": normalized_url, "connect_args": connect_args}
+        database_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query_params), parsed.fragment))
+
+    return {"database_url": database_url, "connect_args": connect_args}
 
 
 engine_options = build_engine_options(settings.DATABASE_URL)
+engine_kwargs_for_creation = dict(engine_kwargs)
+if not settings.DATABASE_URL.startswith("sqlite"):
+    engine_kwargs_for_creation.update({"pool_size": 10, "max_overflow": 20})
 engine = create_async_engine(
     engine_options["database_url"],
-    **engine_kwargs,
+    **engine_kwargs_for_creation,
     connect_args=engine_options["connect_args"],
 )
 

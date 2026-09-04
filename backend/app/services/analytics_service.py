@@ -27,7 +27,13 @@ class AnalyticsService:
         )
         admin_users = admin_users_result.scalar() or 0
         recent_users_result = await self.db.execute(select(User).order_by(User.created_at.desc()).limit(5))
-        recent_users = recent_users_result.scalars().all()
+        if hasattr(recent_users_result, "scalars"):
+            recent_users = recent_users_result.scalars().all()
+        elif hasattr(recent_users_result, "all"):
+            recent_users = recent_users_result.all()
+        else:
+            recent_value = recent_users_result.scalar_one_or_none() if hasattr(recent_users_result, "scalar_one_or_none") else None
+            recent_users = [recent_value] if recent_value is not None else []
 
         return {
             "total_students": total_students,

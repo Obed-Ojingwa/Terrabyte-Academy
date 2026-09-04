@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,https://terrabyte-academy.onrender.com,http://localhost:3000"
-    TRUSTED_HOSTS: str = "localhost,127.0.0.1,terrabyte-acad.vercel.app,terrabyte-academy.onrender.com"
+    TRUSTED_HOSTS: str = "localhost,127.0.0.1,testserver,terrabyte-acad.vercel.app,terrabyte-academy.onrender.com"
     LOG_LEVEL: str = "INFO"
 
     @property
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
         return [item.strip() for item in value.split(",") if item.strip()]
 
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./terrabyte.db", env="DATABASE_URL")
     REDIS_URL: str = "redis://localhost:6379/0"
 
     JWT_SECRET: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
