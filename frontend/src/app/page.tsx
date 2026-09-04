@@ -98,6 +98,44 @@ function HeroSlider() {
   );
 }
 
+const journeySteps = [
+  { num: "01", title: "Choose a Course" },
+  { num: "02", title: "Start Learning" },
+  { num: "03", title: "Get Certified" },
+];
+
+function LearningJourneySection() {
+  return (
+    <section className="relative py-20 md:py-28 px-6 md:px-12 bg-white overflow-hidden">
+      {/* decorative wavy lines - right edge */}
+      <div className="absolute top-0 right-0 h-full w-[180px] pointer-events-none opacity-70" aria-hidden="true">
+        <svg viewBox="0 0 180 400" fill="none" className="w-full h-full" preserveAspectRatio="none">
+          <path d="M180 0H40c50 0 90 30 140 30z" fill="#eef3fb" />
+          <path d="M180 60H60c45 0 80 24 120 24z" fill="#dbe7f8" />
+          <path d="M180 120H80c38 0 66 18 100 18z" fill="#c8dbf4" />
+        </svg>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <h2 className="text-3xl md:text-4xl font-black text-[#0a1a3c] tracking-tight mb-10">
+          Your Learning Journey
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl">
+          {journeySteps.map((step) => (
+            <div
+              key={step.num}
+              className="flex items-center gap-4 bg-[#f8fafc] border border-gray-100 rounded-2xl px-6 py-6"
+            >
+              <span className="text-[#2563eb] font-black text-2xl leading-none">{step.num}</span>
+              <span className="text-gray-900 font-bold text-base">{step.title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function WhyChooseUsSection() {
   return (
     <section className="relative py-20 md:py-28 px-6 md:px-12 bg-white overflow-hidden">
@@ -301,6 +339,9 @@ export default function HomePage() {
 
       {/* ── WHY CHOOSE US ── */}
       <WhyChooseUsSection />
+
+      {/* ── YOUR LEARNING JOURNEY ── */}
+      <LearningJourneySection />
 
       {/* ── COURSES ── */}
       <section className="py-20 md:py-28 px-6 md:px-12 bg-gray-50">
