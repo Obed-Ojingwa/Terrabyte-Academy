@@ -1,8 +1,9 @@
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.config import settings
 
 engine_kwargs = {
@@ -60,6 +61,17 @@ engine = create_async_engine(
     **engine_kwargs_for_creation,
     connect_args=engine_options["connect_args"],
 )
+
+sync_database_url = settings.DATABASE_URL
+if sync_database_url.startswith("sqlite+aiosqlite://"):
+    sync_database_url = sync_database_url.replace("sqlite+aiosqlite://", "sqlite://", 1)
+elif sync_database_url.startswith("postgresql+asyncpg://"):
+    sync_database_url = sync_database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+elif sync_database_url.startswith("postgresql://"):
+    sync_database_url = sync_database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+sync_engine = create_engine(sync_database_url, pool_pre_ping=True)
+SessionLocal = sessionmaker(bind=sync_engine, autoflush=False, expire_on_commit=False)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,

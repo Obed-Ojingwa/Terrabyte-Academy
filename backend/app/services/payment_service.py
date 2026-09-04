@@ -41,19 +41,19 @@ class PaymentService:
 
         amount = float(course.price) if course.price is not None else 0.0
         payload = self.build_payment_payload(str(course.id), mode, str(user.id), user.email, amount)
+        payment_record = Payment(
+            student_id=user.id,
+            course_id=course.id,
+            amount=amount,
+            gateway="paystack",
+            gateway_ref=payload["reference"],
+            status="pending",
+            metadata_={"mode": mode, "course_id": str(course.id)},
+        )
+        self.db.add(payment_record)
+        await self.db.commit()
 
         if not settings.PAYSTACK_SECRET_KEY:
-            payment = Payment(
-                student_id=user.id,
-                course_id=course.id,
-                amount=amount,
-                gateway="paystack",
-                gateway_ref=payload["reference"],
-                status="pending",
-                metadata_={"mode": mode, "course_id": str(course.id)},
-            )
-            self.db.add(payment)
-            await self.db.commit()
             return {"authorization_url": None, "reference": payload["reference"], "message": "Paystack credentials are not configured yet; a local payment reference was created."}
 
         try:
@@ -64,18 +64,7 @@ class PaymentService:
             data = {"status": False, "message": "Gateway unavailable"}
 
         if not data.get("status"):
-            payment = Payment(
-                student_id=user.id,
-                course_id=course.id,
-                amount=amount,
-                gateway="paystack",
-                gateway_ref=payload["reference"],
-                status="pending",
-                metadata_={"mode": mode, "course_id": str(course.id)},
-            )
-            self.db.add(payment)
-            await self.db.commit()
-            return {"authorization_url": None, "reference": payment.gateway_ref, "message": data.get("message") or "Payment gateway unavailable; payment record created for follow-up."}
+            return {"authorization_url": None, "reference": payload["reference"], "message": data.get("message") or "Payment gateway unavailable; payment record created for follow-up."}
 
         return {"authorization_url": data["data"]["authorization_url"], "reference": data["data"]["reference"]}
 
@@ -105,7 +94,9 @@ class PaymentService:
             raise HTTPException(status_code=400, detail="Payment not successful")
 
         meta = data["data"].get("metadata", {})
-        course_id = meta.get("course_id")
+        course_id = meta.get("course_id") or getattr(existing_payment, "course_id", None)
+        if not course_id:
+            raise HTTPException(status_code=400, detail="Payment metadata is missing course information")
         course = (await self.db.execute(select(Course).where(Course.id == course_id))).scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
