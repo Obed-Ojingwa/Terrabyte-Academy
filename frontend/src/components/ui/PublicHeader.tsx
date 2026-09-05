@@ -18,8 +18,12 @@ export default function PublicHeader() {
   useEffect(() => {
     const closeMenu = () => setMenuOpen(false);
     window.addEventListener("resize", closeMenu);
-    return () => window.removeEventListener("resize", closeMenu);
-  }, []);
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      window.removeEventListener("resize", closeMenu);
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -43,7 +47,7 @@ export default function PublicHeader() {
           </Link>
         </div>
 
-        <button className="md:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+        <button className="md:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}>
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             {menuOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -54,8 +58,15 @@ export default function PublicHeader() {
         </button>
       </div>
 
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ${menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-        <div className="border-t border-gray-100 bg-white px-5 py-4 flex flex-col gap-1">
+      <div className={`md:hidden fixed inset-0 top-16 z-40 transition-opacity duration-300 ${menuOpen ? "visible bg-slate-950/25 opacity-100" : "invisible opacity-0"}`} onClick={() => setMenuOpen(false)} aria-hidden="true">
+        <div className={`absolute right-0 top-0 h-[calc(100dvh-4rem)] w-[min(22rem,88vw)] overflow-y-auto border-l border-gray-200 bg-white px-5 py-6 shadow-2xl transition-transform duration-300 ease-out ${menuOpen ? "translate-x-0" : "translate-x-full"}`} onClick={(event) => event.stopPropagation()}>
+          <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Explore</span>
+            <button type="button" onClick={() => setMenuOpen(false)} className="rounded-xl p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900" aria-label="Close menu">
+              <span className="text-xl leading-none">&times;</span>
+            </button>
+          </div>
+          <div className="flex flex-col gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -66,6 +77,7 @@ export default function PublicHeader() {
               {link.label}
             </Link>
           ))}
+          </div>
           <div className="flex gap-3 pt-3 mt-1 border-t border-gray-100">
             <Link
               href="/auth/login"
