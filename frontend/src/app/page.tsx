@@ -92,8 +92,6 @@ function HeroSlider() {
           </button>
         ))}
       </div>
-      <button onClick={() => goTo((current - 1 + heroSlides.length) % heroSlides.length)} aria-label="Previous" className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 border border-white/20 text-white text-xl flex items-center justify-center transition-all">‹</button>
-      <button onClick={next} aria-label="Next" className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 border border-white/20 text-white text-xl flex items-center justify-center transition-all">›</button>
     </div>
   );
 }
