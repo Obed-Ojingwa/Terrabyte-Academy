@@ -158,10 +158,10 @@ function WhyChooseUsSection() {
               {whyUsFeatures.map((f) => (
                 <div
                   key={f.title}
-                  className={`rounded-2xl p-6 ${f.highlighted ? "bg-blue-600 text-white" : "bg-blue-50/70 text-gray-900 border border-blue-100/60"}`}
+                  className="group rounded-2xl p-6 bg-blue-50/70 text-gray-900 border border-blue-100/60 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors"
                 >
-                  <h3 className={`font-bold text-base mb-1.5 ${f.highlighted ? "text-white" : "text-gray-900"}`}>{f.title}</h3>
-                  <p className={`text-sm leading-relaxed ${f.highlighted ? "text-blue-100" : "text-gray-500"}`}>{f.desc}</p>
+                  <h3 className="font-bold text-base mb-1.5 text-gray-900 group-hover:text-white">{f.title}</h3>
+                  <p className="text-sm leading-relaxed text-gray-500 group-hover:text-blue-100">{f.desc}</p>
                 </div>
               ))}
             </div>
