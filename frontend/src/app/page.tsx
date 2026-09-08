@@ -287,7 +287,7 @@ export default function HomePage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative min-h-[92vh] flex items-center pt-16 overflow-hidden">
+      <section className="relative min-h-[105vh] md:min-h-[92vh] flex items-center pt-16 overflow-hidden">
         <HeroSlider />
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-20 pb-44 md:pb-36 w-full">
           <div className="max-w-2xl">
