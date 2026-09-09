@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 
 import BrandLogo from "@/components/ui/BrandLogo";
 import academyLogo  from "./public/terrabyte_services_logo.png";
+import terraLogo from "./public/terra.png";
 
 const heroSlides = [
   { id: 1, src: "https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=1400&q=80&auto=format&fit=crop", alt: "Drone flying over open landscape" },
@@ -175,13 +176,9 @@ function WhyChooseUsSection() {
             </div>
 
             {/* emblem */}
-            <div className="flex justify-center -mt-9 relative z-10">
+            <div className="flex justify-center mt-4 relative z-10">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white shadow-xl border-4 border-white flex items-center justify-center">
-                <svg className="w-12 h-12 md:w-14 md:h-14" viewBox="0 0 60 60" fill="none">
-                  <circle cx="30" cy="30" r="26" stroke="#2563eb" strokeWidth="3" />
-                  <circle cx="30" cy="30" r="17" stroke="#60a5fa" strokeWidth="2" />
-                  <circle cx="30" cy="30" r="7" fill="#2563eb" />
-                </svg>
+                <Image src={terraLogo} alt="Terrabyte Academy" className="w-12 h-12 md:w-14 md:h-14 object-contain" />
               </div>
             </div>
 
