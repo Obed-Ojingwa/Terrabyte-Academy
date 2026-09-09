@@ -176,14 +176,14 @@ function WhyChooseUsSection() {
             </div>
 
             {/* emblem */}
-            <div className="flex justify-center mt-4 relative z-10">
+            <div className="absolute z-10 left-1/2 top-[170px] md:top-[202px] -translate-x-1/2">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white shadow-xl border-4 border-white flex items-center justify-center">
                 <Image src={terraLogo} alt="Terrabyte Academy" className="w-12 h-12 md:w-14 md:h-14 object-contain" />
               </div>
             </div>
 
             {/* bottom images */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-2">
               <div className="rounded-2xl overflow-hidden h-[130px] md:h-[160px] shadow-lg">
                 <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${whyUsImages.bottomLeft})` }} />
               </div>
