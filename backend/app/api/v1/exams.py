@@ -1,13 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin, require_tutor
 from app.models.exam import Exam, ExamResult
 from app.models.course import Course
 from app.models.enrollment import Enrollment
-from app.schemas.lms import ExamCreate, ExamResponse, ExamUpdate, ExamSubmissionCreate, ExamResultResponse
+from app.schemas.lms import (
+    ExamCreate,
+    ExamManagementResponse,
+    ExamResponse,
+    ExamResultResponse,
+    ExamSubmissionCreate,
+    ExamUpdate,
+)
 from datetime import datetime
 
 router = APIRouter(prefix="/exams", tags=["Exams"])
@@ -39,13 +46,13 @@ async def list_exams(
         else:
             return []
     result = await db.execute(query.order_by(Exam.created_at.desc()))
-    return result.scalars().all()
+    return result.unique().scalars().all()
 
 
 @router.get("/{exam_id}", response_model=ExamResponse)
 async def get_exam(exam_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Exam).options(joinedload(Exam.questions), joinedload(Exam.results)).where(Exam.id == exam_id))
-    exam = result.scalar_one_or_none()
+    result = await db.execute(select(Exam).options(joinedload(Exam.questions)).where(Exam.id == exam_id))
+    exam = result.unique().scalar_one_or_none()
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
     role_name = current_user.role.name
@@ -65,6 +72,64 @@ async def get_exam(exam_id: str, current_user=Depends(get_current_user), db: Asy
         if enrollment_result.scalar_one_or_none() is None:
             raise HTTPException(status_code=403, detail="Not authorized")
     return exam
+
+
+@router.get("/{exam_id}/management", response_model=ExamManagementResponse)
+async def get_exam_management(
+    exam_id: str,
+    current_user=Depends(require_tutor),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Exam)
+        .options(selectinload(Exam.questions), selectinload(Exam.results))
+        .where(Exam.id == exam_id)
+    )
+    exam = result.scalar_one_or_none()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    role_name = current_user.role.name
+    if role_name not in {"super_admin", "admin"}:
+        course_result = await db.execute(select(Course).where(Course.id == exam.course_id))
+        course = course_result.scalar_one_or_none()
+        if not course or course.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    return exam
+
+
+@router.get("/{exam_id}/results", response_model=list[ExamResultResponse])
+async def list_exam_results(
+    exam_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    exam_result = await db.execute(select(Exam).where(Exam.id == exam_id))
+    exam = exam_result.scalar_one_or_none()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    role_name = current_user.role.name
+    results_query = select(ExamResult).where(ExamResult.exam_id == exam_id)
+    if role_name == "tutor":
+        course_result = await db.execute(select(Course).where(Course.id == exam.course_id))
+        course = course_result.scalar_one_or_none()
+        if not course or course.tutor_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif role_name not in {"super_admin", "admin"}:
+        enrollment_result = await db.execute(
+            select(Enrollment).where(
+                Enrollment.student_id == current_user.id,
+                Enrollment.course_id == exam.course_id,
+                Enrollment.status.in_(["active", "pending", "completed"]),
+            )
+        )
+        if enrollment_result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        results_query = results_query.where(ExamResult.student_id == current_user.id)
+
+    results = await db.execute(results_query.order_by(ExamResult.taken_at.desc()))
+    return results.scalars().all()
 
 
 @router.post("/{exam_id}/results", response_model=ExamResultResponse, status_code=201)
@@ -144,7 +209,10 @@ async def create_exam(payload: ExamCreate, current_user=Depends(require_tutor), 
     db.add(exam)
     await db.commit()
     await db.refresh(exam)
-    return exam
+    response = await db.execute(
+        select(Exam).options(selectinload(Exam.questions)).where(Exam.id == exam.id)
+    )
+    return response.scalar_one()
 
 
 @router.put("/{exam_id}", response_model=ExamResponse)
@@ -166,7 +234,10 @@ async def update_exam(exam_id: str, payload: ExamUpdate, current_user=Depends(re
 
     await db.commit()
     await db.refresh(exam)
-    return exam
+    response = await db.execute(
+        select(Exam).options(selectinload(Exam.questions)).where(Exam.id == exam.id)
+    )
+    return response.scalar_one()
 
 
 @router.delete("/{exam_id}", status_code=204)

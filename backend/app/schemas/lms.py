@@ -115,6 +115,18 @@ class ExamQuestionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ExamStudentQuestionResponse(BaseModel):
+    id: UUID
+    exam_id: UUID
+    question: str
+    type: str
+    options: Optional[dict] = None
+    points: int
+    position: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ExamResultResponse(BaseModel):
     id: UUID
     exam_id: UUID
@@ -141,6 +153,18 @@ class ExamUpdate(BaseModel):
 
 
 class ExamResponse(BaseModel):
+    id: UUID
+    course_id: UUID
+    title: str
+    duration_min: int
+    pass_score: float
+    created_at: datetime
+    questions: list[ExamStudentQuestionResponse] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExamManagementResponse(BaseModel):
     id: UUID
     course_id: UUID
     title: str

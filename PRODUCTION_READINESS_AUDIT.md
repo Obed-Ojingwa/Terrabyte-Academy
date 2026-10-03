@@ -69,12 +69,12 @@ The documented production path is not production-shaped: backend starts with `--
 
 ### Examination workflow: not functional end to end
 
-The database tables and basic exam/result routes exist, and the student Exams page can submit answers if an exam already has questions. However, the repository has no exam-question create/update/delete API or tutor authoring UI, so a tutor cannot build an exam through the product. There are no exam-specific backend tests. The backend suite passed 20 tests on 2026-10-03, but does not establish that this workflow works.
+The database tables and basic exam/result routes exist, and the student Exams page can submit answers if an exam already has questions. However, the repository has no exam-question create/update/delete API or tutor authoring UI, so a tutor cannot build an exam through the product. Phase 1 read-path and data-exposure hardening was completed on 2026-10-03, with six exam-specific backend tests; authoring and assessment behavior remain incomplete.
 
 Verified gaps and risks:
 
-- `GET /exams` eager-loads the `questions` collection but consumes the SQLAlchemy result without `.unique()`. `GET /exams/{id}` does the same for both `questions` and `results`. SQLAlchemy requires result uniquing for joined eager-loaded collections; add route-level tests and fix these result consumers before relying on either read route.
-- Student responses use `ExamQuestionResponse`, which includes `correct`, and `ExamResponse` includes `results` (including students' IDs and submitted answers). Do not return answer keys or other students' results from student-facing endpoints. Use role-appropriate response schemas and explicit eager loading of only the fields each endpoint needs.
+- **Phase 1 complete:** `GET /exams` and `GET /exams/{id}` now unique joined collection results; authenticated HTTP tests cover both reads and serialization.
+- **Phase 1 complete:** Student exam responses omit answer keys and results. Staff access to answer keys and course-wide results uses `GET /exams/{id}/management`, restricted to admins or the owning tutor. `GET /exams/{id}/results` filters students to their own results; tests cover owner authorization and student result filtering.
 - The Learning Dashboard submits `{ answers: { answer: ... } }`, but grading looks up answers by question UUID. That page's submitted value can never match a question. The dedicated Exams page uses question IDs, but renders every question as free text even though question `type` and `options` are stored.
 - `duration_min` and the Exams page's “upcoming” label are display-only: there is no start/end schedule, attempt start record, server-enforced timer, or deadline. Submitting again overwrites the student's previous result without an attempt policy.
 - Grading compares strings case-insensitively for every question type. It does not grade option values by type, support manual grading for open responses, validate submitted question IDs, or apply a partial-credit policy. `pass_score` is applied against total question points.
@@ -82,8 +82,8 @@ Verified gaps and risks:
 
 Implementation steps to make the workflow usable and safe:
 
-1. Fix list/detail query consumption for joined collection loads and add authenticated API tests that exercise both routes with exams containing multiple questions and results. Confirm response serialization works with the async ORM.
-2. Split student exam delivery from staff management/result views. Redact correct answers and results from student exam responses; provide students access only to their own results, and restrict answer keys and course-wide results to the owning tutor/admin.
+1. **Complete:** Fix list/detail query consumption for joined collection loads and add authenticated API tests covering both routes, safe response fields, and serialization.
+2. **Complete:** Split student exam delivery from staff management/result views. Student reads omit answer keys/results; students can read only their own results; answer keys and course-wide results are restricted to the owning tutor/admin.
 3. Define and validate question types, options, correct-answer representation, positive points, ordering, pass-score bounds, and enrollment eligibility. Add tutor/admin question CRUD endpoints with course ownership checks and a transaction-safe way to save/reorder exam questions.
 4. Build tutor exam authoring and editing UI, including question management. Replace the Learning Dashboard's free-form exam submission with a link or shared component that uses the question-ID answer contract and supports each declared question type.
 5. Decide scheduling, duration, attempts, retakes, and manual-grading rules. Persist attempt start/submission state and enforce availability and time limits on the server; do not rely on a browser timer for enforcement. Make result/attempt persistence atomic and add a uniqueness constraint or explicit attempt records matching the chosen policy.
@@ -103,7 +103,7 @@ Until these steps are complete, treat examinations as an incomplete prototype; d
 
 | Check | Result |
 |---|---|
-| `python -m pytest -q` from `backend/` | **Pass:** 20 passed; 2 Pydantic deprecation warnings. Tests are mostly schema/unit checks and do not validate the critical auth/payment paths above. |
+| `python -m pytest -q` from `backend/` | **Pass:** 26 passed, including 6 exam-specific tests; 2 Pydantic deprecation warnings. Exam tests cover read-route serialization, answer-key/result redaction, tutor ownership, and student result filtering. |
 | `npm run lint` from `frontend/` | **Fail:** ESLint reports unsupported/removed options (`useEslintrc`, `extensions`, and others). |
 | `npm run build` from `frontend/` | **Build completes:** Next.js compiles, type-checks, and generates 37 pages, but reports the ESLint options error during its lint stage. |
 | `npm audit` from `frontend/` | **Fail:** 14 vulnerabilities: 1 critical, 12 high, 1 moderate. |
