@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.course import CourseResponse
+from app.schemas.content import EventResponse
 
 
 class UserSummary(BaseModel):
