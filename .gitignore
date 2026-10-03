@@ -11,6 +11,9 @@ venv/
 .pytest_cache/
 .mypy_cache/
 backend/tests/
+!backend/tests/
+backend/tests/*
+!backend/tests/test_exams.py
 backend/verify_admin.py
 backend/seed_data.py
 

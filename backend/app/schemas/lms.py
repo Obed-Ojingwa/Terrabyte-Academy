@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Optional
+import json
+from typing import Any, Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.course import CourseResponse
 from app.schemas.content import EventResponse
@@ -115,6 +116,117 @@ class ExamQuestionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ExamChoice(BaseModel):
+    id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    text: str = Field(min_length=1, max_length=500)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("text")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Choice text cannot be blank")
+        return value
+
+
+class ExamQuestionDefinition(BaseModel):
+    question: str = Field(min_length=1, max_length=10000)
+    type: Literal["single_choice", "multiple_choice", "true_false", "short_answer", "essay"]
+    options: dict[str, Any] | None = None
+    correct: str | None = Field(default=None, max_length=10000)
+    points: int = Field(default=1, ge=1, le=1000)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("question")
+    @classmethod
+    def strip_question(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Question text cannot be blank")
+        return value
+
+    @field_validator("correct", mode="before")
+    @classmethod
+    def encode_multiple_choice_answer(cls, value: Any) -> Any:
+        if isinstance(value, list) and all(isinstance(item, str) for item in value):
+            return json.dumps(value, separators=(",", ":"))
+        return value
+
+    @model_validator(mode="after")
+    def validate_type_contract(self):
+        if self.type in {"single_choice", "multiple_choice"}:
+            if not isinstance(self.options, dict) or set(self.options) != {"choices"}:
+                raise ValueError("Choice questions require options.choices")
+            raw_choices = self.options["choices"]
+            if not isinstance(raw_choices, list) or len(raw_choices) < 2:
+                raise ValueError("Choice questions require at least two choices")
+            choices = [ExamChoice.model_validate(choice) for choice in raw_choices]
+            choice_ids = [choice.id for choice in choices]
+            if len(choice_ids) != len(set(choice_ids)):
+                raise ValueError("Choice IDs must be unique")
+            self.options = {"choices": [choice.model_dump() for choice in choices]}
+
+            if self.type == "single_choice":
+                if self.correct not in choice_ids:
+                    raise ValueError("Correct answer must be one of the choice IDs")
+            else:
+                try:
+                    correct_ids = json.loads(self.correct or "")
+                except json.JSONDecodeError as error:
+                    raise ValueError("Multiple-choice correct answer must be a JSON array of choice IDs") from error
+                if (
+                    not isinstance(correct_ids, list)
+                    or not correct_ids
+                    or any(not isinstance(item, str) for item in correct_ids)
+                    or len(correct_ids) != len(set(correct_ids))
+                    or not set(correct_ids).issubset(choice_ids)
+                ):
+                    raise ValueError("Multiple-choice correct answer must contain unique valid choice IDs")
+                self.correct = json.dumps(sorted(correct_ids), separators=(",", ":"))
+        elif self.type == "true_false":
+            if self.options is not None:
+                raise ValueError("True/false questions do not accept options")
+            if self.correct not in {"true", "false"}:
+                raise ValueError("True/false correct answer must be 'true' or 'false'")
+        elif self.type == "short_answer":
+            if self.options is not None or not self.correct or not self.correct.strip():
+                raise ValueError("Short-answer questions require a correct answer and no options")
+            self.correct = self.correct.strip()
+        elif self.type == "essay":
+            if self.options is not None or self.correct is not None:
+                raise ValueError("Essay questions do not accept options or an automatic correct answer")
+        return self
+
+
+class ExamQuestionCreate(ExamQuestionDefinition):
+    position: int | None = Field(default=None, ge=0)
+
+
+class ExamQuestionUpdate(BaseModel):
+    question: str | None = Field(default=None, min_length=1, max_length=10000)
+    type: Literal["single_choice", "multiple_choice", "true_false", "short_answer", "essay"] | None = None
+    options: dict[str, Any] | None = None
+    correct: str | list[str] | None = Field(default=None, max_length=10000)
+    points: int | None = Field(default=None, ge=1, le=1000)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="after")
+    def require_update_fields(self):
+        if not self.model_fields_set:
+            raise ValueError("At least one question field must be provided")
+        return self
+
+
+class ExamQuestionReorder(BaseModel):
+    question_ids: list[UUID]
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class ExamStudentQuestionResponse(BaseModel):
     id: UUID
     exam_id: UUID
@@ -141,15 +253,15 @@ class ExamResultResponse(BaseModel):
 
 class ExamCreate(BaseModel):
     course_id: UUID
-    title: str
-    duration_min: int = 60
-    pass_score: float = 70.0
+    title: str = Field(min_length=1, max_length=255)
+    duration_min: int = Field(default=60, ge=1, le=1440)
+    pass_score: float = Field(default=70.0, ge=0, le=100)
 
 
 class ExamUpdate(BaseModel):
-    title: Optional[str] = None
-    duration_min: Optional[int] = None
-    pass_score: Optional[float] = None
+    title: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    duration_min: Optional[int] = Field(default=None, ge=1, le=1440)
+    pass_score: Optional[float] = Field(default=None, ge=0, le=100)
 
 
 class ExamResponse(BaseModel):

@@ -69,12 +69,15 @@ The documented production path is not production-shaped: backend starts with `--
 
 ### Examination workflow: not functional end to end
 
-The database tables and basic exam/result routes exist, and the student Exams page can submit answers if an exam already has questions. However, the repository has no exam-question create/update/delete API or tutor authoring UI, so a tutor cannot build an exam through the product. Phase 1 read-path and data-exposure hardening was completed on 2026-10-03, with six exam-specific backend tests; authoring and assessment behavior remain incomplete.
+The database tables and exam/result routes exist, and the student Exams page can submit answers if an exam already has questions. Phase 1 read-path and data-exposure hardening is complete. Phase 2/3 question validation and backend authoring APIs are now implemented and tested, but there is still no tutor authoring UI, so tutors cannot build exams through the frontend yet. Type-aware grading, attempt policy, and server-enforced timing also remain incomplete.
 
 Verified gaps and risks:
 
 - **Phase 1 complete:** `GET /exams` and `GET /exams/{id}` now unique joined collection results; authenticated HTTP tests cover both reads and serialization.
 - **Phase 1 complete:** Student exam responses omit answer keys and results. Staff access to answer keys and course-wide results uses `GET /exams/{id}/management`, restricted to admins or the owning tutor. `GET /exams/{id}/results` filters students to their own results; tests cover owner authorization and student result filtering.
+- **Phase 2/3 complete:** Tutors/admins can create, update, delete, and reorder questions through `POST /exams/{id}/questions`, `PUT /exams/{id}/questions/{question_id}`, `DELETE /exams/{id}/questions/{question_id}`, and `PUT /exams/{id}/questions/reorder`. Every mutation verifies course ownership. The reorder request must include each question exactly once; insert, delete, and reorder lock the parent exam and update positions in one transaction.
+- Supported question types are `single_choice`, `multiple_choice`, `true_false`, `short_answer`, and `essay`. Choice questions require unique option IDs and valid correct IDs; multiple-choice correct IDs are stored as a sorted compact JSON array in the existing `correct` text column. Points must be 1–1000; pass score must be 0–100; duration must be 1–1440 minutes. Student eligibility consistently requires an active or completed enrollment; pending enrollment is rejected.
+- No database schema change was needed: existing `type`, `options`, `correct`, `points`, and `position` fields support these contracts. Supabase SQL is not required for this phase.
 - The Learning Dashboard submits `{ answers: { answer: ... } }`, but grading looks up answers by question UUID. That page's submitted value can never match a question. The dedicated Exams page uses question IDs, but renders every question as free text even though question `type` and `options` are stored.
 - `duration_min` and the Exams page's “upcoming” label are display-only: there is no start/end schedule, attempt start record, server-enforced timer, or deadline. Submitting again overwrites the student's previous result without an attempt policy.
 - Grading compares strings case-insensitively for every question type. It does not grade option values by type, support manual grading for open responses, validate submitted question IDs, or apply a partial-credit policy. `pass_score` is applied against total question points.
@@ -84,7 +87,7 @@ Implementation steps to make the workflow usable and safe:
 
 1. **Complete:** Fix list/detail query consumption for joined collection loads and add authenticated API tests covering both routes, safe response fields, and serialization.
 2. **Complete:** Split student exam delivery from staff management/result views. Student reads omit answer keys/results; students can read only their own results; answer keys and course-wide results are restricted to the owning tutor/admin.
-3. Define and validate question types, options, correct-answer representation, positive points, ordering, pass-score bounds, and enrollment eligibility. Add tutor/admin question CRUD endpoints with course ownership checks and a transaction-safe way to save/reorder exam questions.
+3. **Complete:** Define and validate question types, options, correct-answer representation, positive points, ordering, pass-score bounds, and enrollment eligibility. Add owner-checked tutor/admin question CRUD endpoints and transactional position maintenance/reordering.
 4. Build tutor exam authoring and editing UI, including question management. Replace the Learning Dashboard's free-form exam submission with a link or shared component that uses the question-ID answer contract and supports each declared question type.
 5. Decide scheduling, duration, attempts, retakes, and manual-grading rules. Persist attempt start/submission state and enforce availability and time limits on the server; do not rely on a browser timer for enforcement. Make result/attempt persistence atomic and add a uniqueness constraint or explicit attempt records matching the chosen policy.
 6. Implement grading per question type, including manual-review state for non-automatic questions, and expose a clear student result/review flow that never reveals protected answer keys prematurely.
@@ -103,7 +106,7 @@ Until these steps are complete, treat examinations as an incomplete prototype; d
 
 | Check | Result |
 |---|---|
-| `python -m pytest -q` from `backend/` | **Pass:** 26 passed, including 6 exam-specific tests; 2 Pydantic deprecation warnings. Exam tests cover read-route serialization, answer-key/result redaction, tutor ownership, and student result filtering. |
+| `python -m pytest -q` from `backend/` | **Pass:** 45 passed, including 25 exam-specific tests; 2 Pydantic deprecation warnings. Exam tests cover safe read serialization, validation, ownership, enrollment eligibility, CRUD, and transactional ordering behavior. |
 | `npm run lint` from `frontend/` | **Fail:** ESLint reports unsupported/removed options (`useEslintrc`, `extensions`, and others). |
 | `npm run build` from `frontend/` | **Build completes:** Next.js compiles, type-checks, and generates 37 pages, but reports the ESLint options error during its lint stage. |
 | `npm audit` from `frontend/` | **Fail:** 14 vulnerabilities: 1 critical, 12 high, 1 moderate. |
