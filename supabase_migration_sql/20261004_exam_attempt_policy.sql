@@ -1,3 +1,4 @@
+--Exam Attempt Policy Migration
 BEGIN;
 
 ALTER TABLE public.exams
