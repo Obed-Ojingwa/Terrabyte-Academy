@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.api.deps import get_current_user
 from app.api.v1.exams import (
+    _grade_question,
     create_exam_question,
     delete_exam_question,
     grade_exam_attempt,
@@ -399,6 +400,52 @@ def test_question_definitions_validate_and_normalize_supported_types(definition,
 def test_question_definitions_reject_invalid_types_and_answers(definition):
     with pytest.raises(ValueError):
         ExamQuestionDefinition.model_validate(definition)
+
+
+@pytest.mark.parametrize(
+    ("question_type", "options", "correct", "answer", "points", "expected_score", "expected_answer"),
+    [
+        ("single_choice", {"choices": [{"id": "yes"}, {"id": "no"}]}, "yes", "yes", 2, 2.0, "yes"),
+        ("multiple_choice", {"choices": [{"id": "a"}, {"id": "b"}]}, '["a","b"]', '["b","a"]', 3, 3.0, '["a","b"]'),
+        ("multiple_choice", {"choices": [{"id": "a"}, {"id": "b"}]}, '["a","b"]', '["a"]', 3, 0.0, '["a"]'),
+        ("true_false", None, "true", "true", 1, 1.0, "true"),
+        ("short_answer", None, "Paris", " paris ", 4, 4.0, "paris"),
+        ("essay", None, None, "Written answer", 5, 0.0, "Written answer"),
+    ],
+)
+def test_objective_grading_is_type_aware_and_normalizes_answers(
+    question_type, options, correct, answer, points, expected_score, expected_answer
+):
+    question = make_question()
+    question.type = question_type
+    question.options = options
+    question.correct = correct
+    question.points = points
+
+    score, normalized_answer = _grade_question(question, answer)
+
+    assert score == expected_score
+    assert normalized_answer == expected_answer
+
+
+@pytest.mark.parametrize(
+    ("question_type", "options", "correct", "answer"),
+    [
+        ("single_choice", {"choices": [{"id": "yes"}, {"id": "no"}]}, "yes", "other"),
+        ("multiple_choice", {"choices": [{"id": "a"}, {"id": "b"}]}, '["a"]', '["unknown"]'),
+        ("true_false", None, "true", "yes"),
+    ],
+)
+def test_objective_grading_rejects_unknown_answer_values(question_type, options, correct, answer):
+    question = make_question()
+    question.type = question_type
+    question.options = options
+    question.correct = correct
+
+    with pytest.raises(HTTPException) as error:
+        _grade_question(question, answer)
+
+    assert error.value.status_code == 422
 
 
 def test_create_question_inserts_at_requested_position_and_canonicalizes_answer():
