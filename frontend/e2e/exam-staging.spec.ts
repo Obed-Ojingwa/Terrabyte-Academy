@@ -62,4 +62,6 @@ test("staging exam: tutor authors, enrolled student submits, tutor grades essay"
   await login(page, studentEmail!, studentPassword!, "student");
   await page.goto("/dashboard/student/exams");
   await expect(page.getByText("Attempt 1: Passed")).toBeVisible();
+  await expect(page.getByText("Score: 3 points")).toBeVisible();
+  await expect(page.getByText("Staging E2E grade")).toBeVisible();
 });

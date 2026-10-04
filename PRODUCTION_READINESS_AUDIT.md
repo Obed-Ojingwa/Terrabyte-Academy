@@ -69,7 +69,7 @@ The documented production path is not production-shaped: backend starts with `--
 
 ### Examination workflow: implemented, production validation remains
 
-The exam workflow now has tutor authoring, student attempt-taking, server-enforced windows/deadlines, retakes, and manual essay review. Phase 1–5 implementation is complete, including a versioned database migration and Supabase SQL. Browser E2E against a live Supabase environment remains unverified.
+The exam workflow now has tutor authoring, student attempt-taking, server-enforced windows/deadlines, retakes, and manual essay review. Phases 1–6 are implemented, including a versioned database migration and Supabase SQL. The local mock-backed browser workflow passes; the staging browser spec now also verifies the student's final score and tutor feedback. Live staging E2E and Supabase migration execution remain unverified.
 
 Verified gaps and risks:
 
@@ -81,7 +81,7 @@ Verified gaps and risks:
 - Attempts default to one, with a tutor-configured maximum of ten. Availability is open-ended when dates are omitted; timestamps must include a timezone. Server-recorded `started_at` and `expires_at` control deadlines, and the deadline is clamped to the exam closing time. Repeated starts resume the current attempt; each new attempt is a separate result row protected by a unique `(exam_id, student_id, attempt_number)` constraint. Expired attempts consume an attempt. Late submissions are rejected and persisted as expired.
 - Objective questions use all-or-nothing scoring; there is no partial credit. Essays enter `pending_review`; their automatic score remains private, and a tutor must grade every essay question within its points range before a final score/pass state is released. Student result reads exclude grading internals; staff review remains owner-restricted.
 - The schema migration backfills existing results as graded attempt records and is available as [`backend/alembic/versions/b7f4c2d91a60_add_exam_attempt_policy.py`](backend/alembic/versions/b7f4c2d91a60_add_exam_attempt_policy.py). The equivalent one-time Supabase SQL is [`supabase_migration_sql/20261004_exam_attempt_policy.sql`](supabase_migration_sql/20261004_exam_attempt_policy.sql). Back up the database and apply exactly one path (Alembic or the SQL script), not both, before deploying the new backend code.
-- Remaining verification: no browser E2E or live Supabase migration/transaction test was run in this environment. The current frontend lint command still emits the repository's known ESLint invalid-option warning during a successful build.
+- Remaining verification: the staging E2E was not run because staging URL, tutor/student credentials, and course ID are not configured. Alembic SQL generation passes offline with a PostgreSQL dialect URL, but no live Supabase migration/transaction test was run because no database URL is configured. The current frontend lint command still emits the repository's known ESLint invalid-option warning during a successful build.
 
 Implementation steps to make the workflow usable and safe:
 
@@ -91,7 +91,7 @@ Implementation steps to make the workflow usable and safe:
 4. **Complete:** Build tutor exam authoring/editing and replace the Learning Dashboard free-form submission with the shared student attempt workflow.
 5. **Complete:** Define scheduling, attempts, retakes, and manual grading; enforce these on the server with transactional attempt records and a unique attempt constraint.
 6. **Complete:** Implement type-aware objective grading, essay review, and protected student result/review fields.
-7. **Partial:** Backend/API tests cover authoring, enrollment, answer validation, grading, deadlines, retakes, and result privacy. Add browser E2E coverage against staging and exercise a real Supabase migration before production.
+7. **Partial:** Backend/API tests cover authoring, enrollment, answer validation, grading, deadlines, retakes, and result privacy. Staging browser E2E coverage now exercises tutor authoring, student submission, essay grading, and protected final result/feedback; run it against configured staging and exercise a real Supabase migration before production.
 
 Until these steps are complete, treat examinations as an incomplete prototype; do not rely on them for assessed or timed exams.
 
@@ -107,13 +107,16 @@ Until these steps are complete, treat examinations as an incomplete prototype; d
 | Check | Result |
 |---|---|
 | `python -m pytest -q` from `backend/` | **Pass:** 51 passed, including 31 exam-specific tests; 2 Pydantic deprecation warnings. Coverage includes attempt lifecycle, deadlines, retakes, grading, privacy, and authoring. |
+| `python -m pytest -q tests/test_exams.py` from `backend/` | **Pass:** 40 exam API tests; 2 existing Pydantic deprecation warnings. |
+| Local Playwright exam workflow using installed Edge | **Pass serially:** tutor authoring, student submission, essay grading, and final score/feedback. One parallel rerun had a transient navigation failure; serial rerun passed. |
+| Staging Playwright spec | **Collected:** staging scenario includes final score and tutor feedback checks; not run because staging URL, accounts, and course ID are unset. |
 | `npm run lint` from `frontend/` | **Fail:** ESLint reports unsupported/removed options (`useEslintrc`, `extensions`, and others). |
 | `npm run build` from `frontend/` | **Build completes:** Next.js compiles, type-checks, and generates 38 pages, but reports the known ESLint invalid-options warning during its lint stage. |
-| `python -m alembic upgrade head --sql` from `backend/` | **Pass:** complete revision chain generates offline SQL with a PostgreSQL dialect URL; live Supabase execution was not run. |
+| `python -m alembic upgrade head --sql` from `backend/` | **Pass offline:** complete revision chain, including `b7f4c2d91a60`, generates SQL using a temporary PostgreSQL dialect URL; no database connection was made. Live Supabase execution was not run. |
 | `npm audit` from `frontend/` | **Fail:** 14 vulnerabilities: 1 critical, 12 high, 1 moderate. |
 | `docker compose config --quiet` | **Pass with warning:** config parses; Compose warns the `version` attribute is obsolete. This does not validate production runtime behavior. |
 | Frontend Docker image build | **Not verified:** Docker daemon unavailable in this environment. |
-| Backend dependency audit, live integrations, browser E2E, production DB migration/restore, load/security testing | **Not run:** requires additional tooling or deployment credentials/environment. |
+| Live staging E2E, real Supabase migration/restore, backend dependency audit, load/security testing | **Not run:** requires staging accounts/course and database credentials/environment. |
 
 ## Recommended Release Gate
 
