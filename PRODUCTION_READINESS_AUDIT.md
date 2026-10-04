@@ -67,9 +67,9 @@ The documented production path is not production-shaped: backend starts with `--
 - Review every object-level authorization path for cross-student/course access (assignments, exams, materials, certificates, forums, analytics, and admin APIs). Existing tests cover some roles/schemas but do not provide systematic API-level IDOR coverage.
 - Verify Paystack webhook signature against raw bytes and add tests for malformed/duplicate events, unknown references, event ordering, and payment/enrollment reconciliation. Ensure payment initialization rejects unpublished/free/invalid course/mode cases according to business rules.
 
-### Examination workflow: not functional end to end
+### Examination workflow: implemented, production validation remains
 
-The database tables and exam/result routes exist, and the student Exams page can submit answers if an exam already has questions. Phase 1 read-path and data-exposure hardening is complete. Phase 2/3 question validation and backend authoring APIs are now implemented and tested, but there is still no tutor authoring UI, so tutors cannot build exams through the frontend yet. Type-aware grading, attempt policy, and server-enforced timing also remain incomplete.
+The exam workflow now has tutor authoring, student attempt-taking, server-enforced windows/deadlines, retakes, and manual essay review. Phase 1–5 implementation is complete, including a versioned database migration and Supabase SQL. Browser E2E against a live Supabase environment remains unverified.
 
 Verified gaps and risks:
 
@@ -77,21 +77,21 @@ Verified gaps and risks:
 - **Phase 1 complete:** Student exam responses omit answer keys and results. Staff access to answer keys and course-wide results uses `GET /exams/{id}/management`, restricted to admins or the owning tutor. `GET /exams/{id}/results` filters students to their own results; tests cover owner authorization and student result filtering.
 - **Phase 2/3 complete:** Tutors/admins can create, update, delete, and reorder questions through `POST /exams/{id}/questions`, `PUT /exams/{id}/questions/{question_id}`, `DELETE /exams/{id}/questions/{question_id}`, and `PUT /exams/{id}/questions/reorder`. Every mutation verifies course ownership. The reorder request must include each question exactly once; insert, delete, and reorder lock the parent exam and update positions in one transaction.
 - Supported question types are `single_choice`, `multiple_choice`, `true_false`, `short_answer`, and `essay`. Choice questions require unique option IDs and valid correct IDs; multiple-choice correct IDs are stored as a sorted compact JSON array in the existing `correct` text column. Points must be 1–1000; pass score must be 0–100; duration must be 1–1440 minutes. Student eligibility consistently requires an active or completed enrollment; pending enrollment is rejected.
-- No database schema change was needed: existing `type`, `options`, `correct`, `points`, and `position` fields support these contracts. Supabase SQL is not required for this phase.
-- The Learning Dashboard submits `{ answers: { answer: ... } }`, but grading looks up answers by question UUID. That page's submitted value can never match a question. The dedicated Exams page uses question IDs, but renders every question as free text even though question `type` and `options` are stored.
-- `duration_min` and the Exams page's “upcoming” label are display-only: there is no start/end schedule, attempt start record, server-enforced timer, or deadline. Submitting again overwrites the student's previous result without an attempt policy.
-- Grading compares strings case-insensitively for every question type. It does not grade option values by type, support manual grading for open responses, validate submitted question IDs, or apply a partial-credit policy. `pass_score` is applied against total question points.
-- Submission authorization also admits pending enrollments. Decide the intended eligibility policy and enforce it consistently for listing, viewing, starting, and submitting an exam.
+- **Phase 4/5 complete:** The tutor Exam Studio creates and edits exams/questions, supports schedule and attempt settings, choice/true-false/short-answer/essay question authoring, and reordering. Question/scoring edits lock after the first attempt so historic results remain reproducible. Students now start/resume attempts in one shared Exams page with controls for each question type; Learning Dashboard links to that workflow instead of submitting an incompatible answer object.
+- Attempts default to one, with a tutor-configured maximum of ten. Availability is open-ended when dates are omitted; timestamps must include a timezone. Server-recorded `started_at` and `expires_at` control deadlines, and the deadline is clamped to the exam closing time. Repeated starts resume the current attempt; each new attempt is a separate result row protected by a unique `(exam_id, student_id, attempt_number)` constraint. Expired attempts consume an attempt. Late submissions are rejected and persisted as expired.
+- Objective questions use all-or-nothing scoring; there is no partial credit. Essays enter `pending_review`; their automatic score remains private, and a tutor must grade every essay question within its points range before a final score/pass state is released. Student result reads exclude grading internals; staff review remains owner-restricted.
+- The schema migration backfills existing results as graded attempt records and is available as [`backend/alembic/versions/b7f4c2d91a60_add_exam_attempt_policy.py`](backend/alembic/versions/b7f4c2d91a60_add_exam_attempt_policy.py). The equivalent one-time Supabase SQL is [`supabase_migration_sql/20261004_exam_attempt_policy.sql`](supabase_migration_sql/20261004_exam_attempt_policy.sql). Back up the database and apply exactly one path (Alembic or the SQL script), not both, before deploying the new backend code.
+- Remaining verification: no browser E2E or live Supabase migration/transaction test was run in this environment. The current frontend lint command still emits the repository's known ESLint invalid-option warning during a successful build.
 
 Implementation steps to make the workflow usable and safe:
 
 1. **Complete:** Fix list/detail query consumption for joined collection loads and add authenticated API tests covering both routes, safe response fields, and serialization.
 2. **Complete:** Split student exam delivery from staff management/result views. Student reads omit answer keys/results; students can read only their own results; answer keys and course-wide results are restricted to the owning tutor/admin.
 3. **Complete:** Define and validate question types, options, correct-answer representation, positive points, ordering, pass-score bounds, and enrollment eligibility. Add owner-checked tutor/admin question CRUD endpoints and transactional position maintenance/reordering.
-4. Build tutor exam authoring and editing UI, including question management. Replace the Learning Dashboard's free-form exam submission with a link or shared component that uses the question-ID answer contract and supports each declared question type.
-5. Decide scheduling, duration, attempts, retakes, and manual-grading rules. Persist attempt start/submission state and enforce availability and time limits on the server; do not rely on a browser timer for enforcement. Make result/attempt persistence atomic and add a uniqueness constraint or explicit attempt records matching the chosen policy.
-6. Implement grading per question type, including manual-review state for non-automatic questions, and expose a clear student result/review flow that never reveals protected answer keys prematurely.
-7. Add API integration tests for authoring permissions, enrollment access, malformed/unknown answers, each grading type, no answer-key/result leakage, timing and attempt limits, resubmissions/concurrent submissions, and student result isolation. Add a browser E2E test for tutor authoring through student submission and result review.
+4. **Complete:** Build tutor exam authoring/editing and replace the Learning Dashboard free-form submission with the shared student attempt workflow.
+5. **Complete:** Define scheduling, attempts, retakes, and manual grading; enforce these on the server with transactional attempt records and a unique attempt constraint.
+6. **Complete:** Implement type-aware objective grading, essay review, and protected student result/review fields.
+7. **Partial:** Backend/API tests cover authoring, enrollment, answer validation, grading, deadlines, retakes, and result privacy. Add browser E2E coverage against staging and exercise a real Supabase migration before production.
 
 Until these steps are complete, treat examinations as an incomplete prototype; do not rely on them for assessed or timed exams.
 
@@ -106,9 +106,10 @@ Until these steps are complete, treat examinations as an incomplete prototype; d
 
 | Check | Result |
 |---|---|
-| `python -m pytest -q` from `backend/` | **Pass:** 45 passed, including 25 exam-specific tests; 2 Pydantic deprecation warnings. Exam tests cover safe read serialization, validation, ownership, enrollment eligibility, CRUD, and transactional ordering behavior. |
+| `python -m pytest -q` from `backend/` | **Pass:** 51 passed, including 31 exam-specific tests; 2 Pydantic deprecation warnings. Coverage includes attempt lifecycle, deadlines, retakes, grading, privacy, and authoring. |
 | `npm run lint` from `frontend/` | **Fail:** ESLint reports unsupported/removed options (`useEslintrc`, `extensions`, and others). |
-| `npm run build` from `frontend/` | **Build completes:** Next.js compiles, type-checks, and generates 37 pages, but reports the ESLint options error during its lint stage. |
+| `npm run build` from `frontend/` | **Build completes:** Next.js compiles, type-checks, and generates 38 pages, but reports the known ESLint invalid-options warning during its lint stage. |
+| `python -m alembic upgrade head --sql` from `backend/` | **Pass:** complete revision chain generates offline SQL with a PostgreSQL dialect URL; live Supabase execution was not run. |
 | `npm audit` from `frontend/` | **Fail:** 14 vulnerabilities: 1 critical, 12 high, 1 moderate. |
 | `docker compose config --quiet` | **Pass with warning:** config parses; Compose warns the `version` attribute is obsolete. This does not validate production runtime behavior. |
 | Frontend Docker image build | **Not verified:** Docker daemon unavailable in this environment. |

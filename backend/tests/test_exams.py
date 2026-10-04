@@ -11,21 +11,27 @@ from app.api.deps import get_current_user
 from app.api.v1.exams import (
     create_exam_question,
     delete_exam_question,
+    grade_exam_attempt,
     get_exam,
     get_exam_management,
     list_exam_results,
     list_exams,
     reorder_exam_questions,
+    start_exam_attempt,
+    submit_exam_result,
     update_exam_question,
 )
 from app.database import get_db
 from app.main import app
 from app.schemas.lms import (
     ExamManagementResponse,
+    ExamManualGradeSubmission,
+    ExamSubmissionCreate,
     ExamQuestionCreate,
     ExamQuestionDefinition,
     ExamQuestionReorder,
     ExamQuestionUpdate,
+    ExamResultResponse,
     ExamResponse,
 )
 
@@ -113,6 +119,9 @@ def make_exam(*, results=None):
         title="Arithmetic",
         duration_min=30,
         pass_score=70.0,
+        available_from=None,
+        available_until=None,
+        max_attempts=1,
         created_at=datetime(2026, 1, 1),
         questions=[make_question()],
         results=results or [],
@@ -125,9 +134,35 @@ def make_exam_result(student_id):
         exam_id=EXAM_ID,
         student_id=student_id,
         score=1.0,
+        auto_score=1.0,
+        manual_grades={},
         answers={str(QUESTION_ID): "4"},
         passed=True,
         taken_at=datetime(2026, 1, 2),
+        status="graded",
+        expires_at=None,
+    )
+
+
+def make_attempt(*, status="in_progress", expires_at=None, attempt_id=None):
+    from datetime import timezone
+
+    return SimpleNamespace(
+        id=attempt_id or UUID("99999999-9999-9999-9999-999999999999"),
+        exam_id=EXAM_ID,
+        student_id=STUDENT_ID,
+        attempt_number=1,
+        started_at=datetime.now(timezone.utc),
+        expires_at=expires_at or datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year + 1),
+        submitted_at=None,
+        status=status,
+        score=None,
+        auto_score=None,
+        manual_grades={},
+        feedback=None,
+        answers={},
+        passed=False,
+        taken_at=datetime.now(),
     )
 
 
@@ -238,6 +273,10 @@ def test_student_results_query_is_limited_to_the_current_student():
     assert results == [own_result]
     assert "exam_results.student_id" in str(db.statements[-1])
 
+    response = ExamResultResponse.model_validate(own_result).model_dump()
+    assert "auto_score" not in response
+    assert "manual_grades" not in response
+
 
 def test_pending_enrollment_is_not_eligible_to_view_an_exam():
     db = FakeDB(
@@ -270,6 +309,7 @@ def test_tutor_can_create_question_through_http_route():
     db = FakeDB(
         FakeExecutionResult(scalar=make_exam()),
         FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=None),
         FakeExecutionResult(rows=[first]),
     )
 
@@ -367,6 +407,7 @@ def test_create_question_inserts_at_requested_position_and_canonicalizes_answer(
     db = FakeDB(
         FakeExecutionResult(scalar=make_exam()),
         FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=None),
         FakeExecutionResult(rows=[first, second]),
     )
     payload = ExamQuestionCreate(
@@ -396,6 +437,7 @@ def test_reorder_requires_a_complete_permutation_and_commits_order_atomically():
     db = FakeDB(
         FakeExecutionResult(scalar=make_exam()),
         FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=None),
         FakeExecutionResult(rows=[first, second]),
     )
 
@@ -418,6 +460,7 @@ def test_reorder_rejects_missing_question_ids_without_committing():
     db = FakeDB(
         FakeExecutionResult(scalar=make_exam()),
         FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=None),
         FakeExecutionResult(rows=[make_question()]),
     )
 
@@ -440,6 +483,7 @@ def test_update_question_revalidates_merged_contract_and_rolls_back_invalid_type
     db = FakeDB(
         FakeExecutionResult(scalar=make_exam()),
         FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=None),
         FakeExecutionResult(scalar=question),
     )
 
@@ -466,6 +510,7 @@ def test_delete_question_compacts_positions():
     db = FakeDB(
         FakeExecutionResult(scalar=make_exam()),
         FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=None),
         FakeExecutionResult(rows=[first, second, third]),
     )
 
@@ -482,3 +527,184 @@ def test_delete_question_compacts_positions():
     assert first.position == 0
     assert third.position == 1
     assert db.commit_count == 1
+
+
+def test_start_attempt_creates_server_deadline_and_is_idempotent():
+    from datetime import timezone
+
+    exam = make_exam()
+    active_attempt = make_attempt()
+    create_db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(rows=[]),
+        FakeExecutionResult(rows=[make_question()]),
+    )
+
+    started = asyncio.run(start_exam_attempt(str(EXAM_ID), make_user("student"), create_db))
+
+    assert started.status == "in_progress"
+    assert started.attempt_number == 1
+    assert (started.expires_at - started.started_at).total_seconds() == pytest.approx(1800, abs=1)
+    assert create_db.commit_count == 1
+
+    resume_db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(rows=[active_attempt]),
+    )
+    resumed = asyncio.run(start_exam_attempt(str(EXAM_ID), make_user("student"), resume_db))
+
+    assert resumed.attempt_id == active_attempt.id
+    assert resume_db.commit_count == 0
+
+
+def test_start_attempt_rejects_closed_window_and_exhausted_attempts():
+    from datetime import timezone
+
+    future_exam = make_exam()
+    future_exam.available_from = datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year + 1)
+    future_db = FakeDB(FakeExecutionResult(scalar=future_exam), FakeExecutionResult(scalar=object()))
+    with pytest.raises(HTTPException) as future_error:
+        asyncio.run(start_exam_attempt(str(EXAM_ID), make_user("student"), future_db))
+    assert future_error.value.status_code == 409
+
+    completed_exam = make_exam()
+    completed_db = FakeDB(
+        FakeExecutionResult(scalar=completed_exam),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(rows=[make_attempt(status="graded")]),
+    )
+    with pytest.raises(HTTPException) as exhausted_error:
+        asyncio.run(start_exam_attempt(str(EXAM_ID), make_user("student"), completed_db))
+    assert exhausted_error.value.status_code == 409
+    assert completed_db.commit_count == 0
+
+
+def test_submission_is_attempt_bound_type_graded_and_atomic():
+    exam = make_exam()
+    attempt = make_attempt()
+    db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(scalar=attempt),
+    )
+
+    result = asyncio.run(
+        submit_exam_result(
+            str(EXAM_ID),
+            ExamSubmissionCreate(attempt_id=attempt.id, answers={str(QUESTION_ID): " 4 "}),
+            make_user("student"),
+            db,
+        )
+    )
+
+    assert result.status == "graded"
+    assert result.auto_score == 1.0
+    assert result.score == 1.0
+    assert result.passed is True
+    assert result.answers == {str(QUESTION_ID): "4"}
+    assert db.commit_count == 1
+
+
+def test_submission_rejects_answer_ids_outside_the_exam_without_commit():
+    exam = make_exam()
+    attempt = make_attempt()
+    db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(scalar=attempt),
+    )
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            submit_exam_result(
+                str(EXAM_ID),
+                ExamSubmissionCreate(attempt_id=attempt.id, answers={str(TUTOR_ID): "4"}),
+                make_user("student"),
+                db,
+            )
+        )
+
+    assert error.value.status_code == 422
+    assert db.commit_count == 0
+
+
+def test_expired_submission_persists_expired_status():
+    from datetime import timezone
+
+    attempt = make_attempt(expires_at=datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year - 1))
+    db = FakeDB(
+        FakeExecutionResult(scalar=make_exam()),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(scalar=attempt),
+    )
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            submit_exam_result(
+                str(EXAM_ID),
+                ExamSubmissionCreate(attempt_id=attempt.id, answers={str(QUESTION_ID): "4"}),
+                make_user("student"),
+                db,
+            )
+        )
+
+    assert error.value.status_code == 409
+    assert attempt.status == "expired"
+    assert db.commit_count == 1
+
+
+def test_manual_essay_grading_finalizes_result_and_checks_bounds():
+    exam = make_exam()
+    short_question = make_question(position=0)
+    short_question.points = 3
+    essay_question = make_question(TUTOR_ID, position=1)
+    essay_question.type = "essay"
+    essay_question.points = 2
+    essay_question.correct = None
+    exam.questions = [short_question, essay_question]
+    attempt = make_attempt(status="pending_review")
+    attempt.auto_score = 3.0
+    attempt.answers = {str(essay_question.id): "Written response"}
+    db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=attempt),
+        FakeExecutionResult(rows=exam.questions),
+    )
+
+    graded = asyncio.run(
+        grade_exam_attempt(
+            str(EXAM_ID),
+            attempt.id,
+            ExamManualGradeSubmission(grades={str(essay_question.id): 1.0}, feedback="Good reasoning"),
+            make_user("tutor", TUTOR_ID),
+            db,
+        )
+    )
+
+    assert graded.status == "graded"
+    assert graded.score == 4.0
+    assert graded.passed is True
+    assert graded.feedback == "Good reasoning"
+    assert db.commit_count == 1
+
+    invalid_db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=SimpleNamespace(tutor_id=TUTOR_ID)),
+        FakeExecutionResult(scalar=make_attempt(status="pending_review")),
+        FakeExecutionResult(rows=exam.questions),
+    )
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            grade_exam_attempt(
+                str(EXAM_ID),
+                attempt.id,
+                ExamManualGradeSubmission(grades={str(essay_question.id): 3.0}),
+                make_user("tutor", TUTOR_ID),
+                invalid_db,
+            )
+        )
+    assert error.value.status_code == 422
+    assert invalid_db.commit_count == 0

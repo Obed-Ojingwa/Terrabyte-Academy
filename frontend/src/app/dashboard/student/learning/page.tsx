@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { BookOpen, ClipboardList, Trophy, CheckCircle2, Clock3 } from "lucide-react";
@@ -10,11 +11,9 @@ export default function StudentLearningPage() {
   const qc = useQueryClient();
   const [selectedEnrollment, setSelectedEnrollment] = useState<string | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
-  const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});
 
   const { data: enrollmentsData } = useQuery({ queryKey: ["my-enrollments"], queryFn: async () => (await api.get("/enrollments")).data });
   const { data: assignmentsData } = useQuery({ queryKey: ["student-assignments"], queryFn: async () => (await api.get("/assignments")).data });
-  const { data: examsData } = useQuery({ queryKey: ["student-exams"], queryFn: async () => (await api.get("/exams")).data });
 
   const progressMutation = useMutation({
     mutationFn: async ({ enrollmentId, lessonId }: { enrollmentId: string; lessonId: string }) => api.post(`/enrollments/${enrollmentId}/lessons/${lessonId}/progress`, { lesson_id: lessonId, is_completed: true, watch_time_sec: 300 }),
@@ -25,25 +24,11 @@ export default function StudentLearningPage() {
     onError: () => toast.error("Unable to update progress"),
   });
 
-  const submitExamMutation = useMutation({
-    mutationFn: async ({ examId, answers }: { examId: string; answers: Record<string, string> }) => (await api.post(`/exams/${examId}/results`, { answers })).data,
-    onSuccess: () => {
-      toast.success("Exam submitted");
-      qc.invalidateQueries({ queryKey: ["student-exams"] });
-    },
-    onError: () => toast.error("Unable to submit exam"),
-  });
-
   const enrollments = useMemo(() => enrollmentsData ?? [], [enrollmentsData]);
   const assignments = useMemo(() => {
     const courseId = selectedEnrollment ? enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment)?.course_id : null;
     return (assignmentsData ?? []).filter((assignment: any) => !courseId || assignment.course_id === courseId || assignment.course?.id === courseId);
   }, [assignmentsData, enrollments, selectedEnrollment]);
-  const exams = useMemo(() => {
-    const courseId = selectedEnrollment ? enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment)?.course_id : null;
-    return (examsData ?? []).filter((exam: any) => !courseId || exam.course_id === courseId || exam.course?.id === courseId);
-  }, [examsData, enrollments, selectedEnrollment]);
-
   const selectedCourse = enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment) ?? enrollments[0];
   const courseModules = useMemo(() => selectedCourse?.course?.modules ?? [], [selectedCourse]);
   const lessonProgress = useMemo(() => {
@@ -101,18 +86,8 @@ export default function StudentLearningPage() {
 
         <div className="page-surface rounded-3xl p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2"><Trophy size={18} className="text-brand-400" /><h2 className="text-lg font-semibold text-slate-950">Exams</h2></div>
-          <div className="space-y-3">
-            {exams.map((exam: any) => (
-              <div key={exam.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
-                <div className="font-semibold text-slate-950">{exam.title}</div>
-                <div className="mt-1 text-xs text-slate-500">{exam.duration_min} min • Pass {exam.pass_score}</div>
-                <div className="mt-3 flex items-center gap-2">
-                  <input value={examAnswers[exam.id] ?? ""} onChange={(e) => setExamAnswers((prev) => ({ ...prev, [exam.id]: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950" placeholder="Answer" />
-                  <button onClick={() => submitExamMutation.mutate({ examId: exam.id, answers: { answer: examAnswers[exam.id] ?? "" } })} className="rounded-xl border border-brand-500/20 bg-brand-50 px-3 py-2 text-xs text-brand-700">Submit</button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-slate-600">Start an attempt, answer each question type, and review your results in the exam workspace.</p>
+          <Link href="/dashboard/student/exams" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Open exams</Link>
         </div>
       </div>
 

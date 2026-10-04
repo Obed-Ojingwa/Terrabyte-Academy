@@ -70,7 +70,15 @@ async def get_student_dashboard(current_user=Depends(get_current_user), db: Asyn
     assignments_due = assign_res.scalars().all()
 
     # recent exam results for student
-    exam_res_q = select(ExamResult).where(ExamResult.student_id == current_user.id).order_by(ExamResult.taken_at.desc()).limit(10)
+    exam_res_q = (
+        select(ExamResult)
+        .where(
+            ExamResult.student_id == current_user.id,
+            ExamResult.status.in_(["expired", "pending_review", "graded"]),
+        )
+        .order_by(ExamResult.taken_at.desc())
+        .limit(10)
+    )
     exam_res = await db.execute(exam_res_q)
     recent_exam_results = exam_res.scalars().all()
 
@@ -184,7 +192,10 @@ async def get_student_profile(current_user=Depends(get_current_user), db: AsyncS
     exam_results_result = await db.execute(
         select(ExamResult)
         .options(joinedload(ExamResult.exam))
-        .where(ExamResult.student_id == user.id)
+        .where(
+            ExamResult.student_id == user.id,
+            ExamResult.status.in_(["expired", "pending_review", "graded"]),
+        )
         .order_by(ExamResult.taken_at.desc())
     )
     exam_results = exam_results_result.scalars().all()

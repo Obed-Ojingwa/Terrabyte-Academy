@@ -23,6 +23,7 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/tutor" },
     { label: "My Courses", icon: BookOpen, href: "/dashboard/tutor/courses" },
     { label: "Assignments", icon: FileText, href: "/dashboard/tutor/assignments" },
+    { label: "Exams", icon: Trophy, href: "/dashboard/tutor/exams" },
     { label: "Submissions", icon: CheckSquare, href: "/dashboard/tutor/submissions" },
   ],
   admin: [

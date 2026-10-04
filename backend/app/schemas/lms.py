@@ -55,9 +55,32 @@ class SubmissionCreate(BaseModel):
 
 
 class ExamSubmissionCreate(BaseModel):
+    attempt_id: UUID
     answers: dict[str, str] = Field(default_factory=dict)
 
+    @field_validator("answers")
+    @classmethod
+    def validate_answer_lengths(cls, answers: dict[str, str]) -> dict[str, str]:
+        if any(len(answer) > 10000 for answer in answers.values()):
+            raise ValueError("Answers cannot exceed 10,000 characters")
+        return answers
+
     model_config = ConfigDict(from_attributes=True)
+
+
+class ExamAttemptStartResponse(BaseModel):
+    attempt_id: UUID
+    attempt_number: int
+    started_at: datetime
+    expires_at: datetime
+    status: Literal["in_progress"]
+
+
+class ExamManualGradeSubmission(BaseModel):
+    grades: dict[str, float]
+    feedback: str | None = Field(default=None, max_length=10000)
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class LessonProgressResponse(BaseModel):
@@ -247,6 +270,12 @@ class ExamResultResponse(BaseModel):
     answers: Optional[dict] = None
     passed: bool
     taken_at: datetime
+    attempt_number: int = 1
+    started_at: datetime | None = None
+    expires_at: datetime | None = None
+    submitted_at: datetime | None = None
+    status: Literal["in_progress", "expired", "pending_review", "graded"] = "graded"
+    feedback: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -256,12 +285,44 @@ class ExamCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     duration_min: int = Field(default=60, ge=1, le=1440)
     pass_score: float = Field(default=70.0, ge=0, le=100)
+    available_from: datetime | None = None
+    available_until: datetime | None = None
+    max_attempts: int = Field(default=1, ge=1, le=10)
+
+    @field_validator("available_from", "available_until")
+    @classmethod
+    def require_timezone(cls, value: datetime | None) -> datetime | None:
+        if value is not None and value.utcoffset() is None:
+            raise ValueError("Availability timestamps must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def validate_availability_window(self):
+        if self.available_from and self.available_until and self.available_from >= self.available_until:
+            raise ValueError("available_until must be later than available_from")
+        return self
 
 
 class ExamUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
     duration_min: Optional[int] = Field(default=None, ge=1, le=1440)
     pass_score: Optional[float] = Field(default=None, ge=0, le=100)
+    available_from: datetime | None = None
+    available_until: datetime | None = None
+    max_attempts: int | None = Field(default=None, ge=1, le=10)
+
+    @field_validator("available_from", "available_until")
+    @classmethod
+    def require_timezone(cls, value: datetime | None) -> datetime | None:
+        if value is not None and value.utcoffset() is None:
+            raise ValueError("Availability timestamps must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def validate_availability_window(self):
+        if self.available_from and self.available_until and self.available_from >= self.available_until:
+            raise ValueError("available_until must be later than available_from")
+        return self
 
 
 class ExamResponse(BaseModel):
@@ -270,6 +331,9 @@ class ExamResponse(BaseModel):
     title: str
     duration_min: int
     pass_score: float
+    available_from: datetime | None = None
+    available_until: datetime | None = None
+    max_attempts: int = 1
     created_at: datetime
     questions: list[ExamStudentQuestionResponse] = Field(default_factory=list)
 
@@ -282,6 +346,9 @@ class ExamManagementResponse(BaseModel):
     title: str
     duration_min: int
     pass_score: float
+    available_from: datetime | None = None
+    available_until: datetime | None = None
+    max_attempts: int = 1
     created_at: datetime
     questions: list[ExamQuestionResponse] = Field(default_factory=list)
     results: list[ExamResultResponse] = Field(default_factory=list)
