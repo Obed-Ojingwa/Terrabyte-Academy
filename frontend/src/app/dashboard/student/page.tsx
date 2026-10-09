@@ -12,7 +12,13 @@ export default function StudentDashboard() {
   const { user } = useAuthStore();
   const { data: stats } = useQuery({ queryKey: ["student-stats"], queryFn: async () => (await api.get("/analytics/student/stats")).data });
   const { data: dashboard } = useQuery({ queryKey: ["student-dashboard"], queryFn: async () => (await api.get("/student/dashboard")).data });
-  const { data: certificates = [] } = useQuery({ queryKey: ["student-certificates"], queryFn: async () => (await api.get("/certificates/me")).data });
+  const { data: profile } = useQuery({ queryKey: ["student-profile"], queryFn: async () => (await api.get("/student/profile")).data });
+  const { data: certificates = [] } = useQuery({
+    queryKey: ["student-certificates"],
+    queryFn: async () => (await api.get("/certificates/me")).data,
+    refetchInterval: (query) =>
+      query.state.data?.some((certificate: { status: string }) => certificate.status === "generating") ? 3000 : false,
+  });
   const nextSteps = stats?.next_up ?? [];
 
   const requestCertificateMutation = useMutation({
@@ -22,6 +28,10 @@ export default function StudentDashboard() {
   });
 
   const enrollments = useMemo(() => dashboard?.enrollments ?? [], [dashboard]);
+  const certificateCourseIds = useMemo(
+    () => new Set(certificates.map((certificate: any) => certificate.course_id || certificate.course?.id)),
+    [certificates],
+  );
 
   return (
     <div className="p-6 space-y-8 page-light min-h-full text-slate-950">
@@ -88,7 +98,17 @@ export default function StudentDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <button className="text-xs bg-brand-500 text-white border border-brand-500/20 px-3 py-2 rounded-xl transition-all hover:bg-brand-600">Continue</button>
-                <button onClick={() => requestCertificateMutation.mutate(e.course_id)} className="text-xs bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl transition-all hover:bg-slate-100">Request certificate</button>
+                {(e.progress ?? 0) >= 100 && !certificateCourseIds.has(e.course_id || e.course?.id) && (
+                  profile?.certificate_name ? (
+                    <button
+                      onClick={() => requestCertificateMutation.mutate(e.course_id || e.course?.id)}
+                      disabled={requestCertificateMutation.isPending}
+                      className="text-xs bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl transition-all hover:bg-slate-100 disabled:opacity-60"
+                    >Request certificate</button>
+                  ) : (
+                    <a href="/dashboard/student/profile" className="text-xs font-semibold text-brand-700 hover:underline">Set certificate name</a>
+                  )
+                )}
               </div>
             </div>
           ))}

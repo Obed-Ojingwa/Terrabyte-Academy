@@ -10,19 +10,21 @@ export default function AdminCertificatesPage() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-certificates"],
     queryFn: async () => (await api.get("/certificates/")).data,
+    refetchInterval: (query) =>
+      query.state.data?.some((certificate: { status: string }) => certificate.status === "generating") ? 3000 : false,
   });
 
   const approveCertificate = useMutation({
     mutationFn: async (certificateId: string) => api.put(`/certificates/${certificateId}/approve`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-certificates"] });
-      toast.success("Certificate approved");
+      toast.success("Certificate generation started");
     },
     onError: () => toast.error("Unable to approve certificate"),
   });
 
   const certificates = Array.isArray(data) ? data : [];
-  const pendingCount = certificates.filter((item: any) => item.status !== "issued").length;
+  const pendingCount = certificates.filter((item: any) => item.status !== "issued" || !item.pdf_available).length;
 
   return (
     <div className="min-h-full page-light p-6 text-slate-950">
@@ -53,18 +55,18 @@ export default function AdminCertificatesPage() {
                     <p className="font-semibold text-slate-950">{certificate.certificate_number}</p>
                   </div>
                   <p className="mt-1 text-sm text-slate-600">
-                    {certificate.student?.first_name} {certificate.student?.last_name}
+                    {certificate.student?.certificate_name || `${certificate.student?.first_name ?? ""} ${certificate.student?.last_name ?? ""}`}
                   </p>
                   <p className="text-sm text-slate-500">{certificate.course?.title ?? "Course"}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${certificate.status === "issued" ? "bg-emerald-500/10 text-emerald-700" : "bg-amber-500/10 text-amber-700"}`}>
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${certificate.status === "issued" ? "bg-emerald-500/10 text-emerald-700" : certificate.status === "failed" ? "bg-red-500/10 text-red-700" : "bg-amber-500/10 text-amber-700"}`}>
                     {certificate.status === "issued" ? <CheckCircle2 size={14} /> : <Clock3 size={14} />}
                     {certificate.status}
                   </span>
-                  {certificate.status !== "issued" && (
-                    <button onClick={() => approveCertificate.mutate(certificate.id)} disabled={approveCertificate.isPending} className="rounded-xl border border-brand-500/20 bg-brand-500/10 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60">
-                      Approve
+                  {(certificate.status !== "issued" || !certificate.pdf_available) && (
+                    <button onClick={() => approveCertificate.mutate(certificate.id)} disabled={approveCertificate.isPending || certificate.status === "generating"} className="rounded-xl border border-brand-500/20 bg-brand-500/10 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                      {certificate.status === "failed" ? "Retry" : certificate.status === "generating" ? "Generating..." : certificate.status === "issued" ? "Rebuild PDF" : "Issue"}
                     </button>
                   )}
                 </div>

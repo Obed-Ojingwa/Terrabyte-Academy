@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class UserRoleSummary(BaseModel):
@@ -47,10 +48,21 @@ class UserCreateRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    certificate_name: Optional[str] = Field(default=None, min_length=1, max_length=150)
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     is_active: Optional[bool] = None
     role_name: Optional[str] = Field(default=None, min_length=1, max_length=50)
+
+    @field_validator("certificate_name")
+    @classmethod
+    def validate_certificate_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        if not value:
+            raise ValueError("Certificate name cannot be blank")
+        return value
 
 
 class TokenResponse(BaseModel):

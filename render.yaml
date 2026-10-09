@@ -16,9 +16,11 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://your-vercel-app.vercel.app,http://localhost:3000
+        value: https://www.terrabyte.ng,https://terrabyte.ng,https://terrabyte-acad.vercel.app,http://localhost:3000
+      - key: TRUSTED_HOSTS
+        value: terrabyte-acad-backend.onrender.com,terrabyte-academy.onrender.com,localhost,127.0.0.1
       - key: REDIS_URL
-        value: redis://localhost:6379/0
+        sync: false
       - key: AWS_ACCESS_KEY
         sync: false
       - key: AWS_SECRET_KEY
@@ -38,4 +40,39 @@ services:
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+
+  - type: worker
+    name: terrabyte-celery-worker
+    env: python
+    plan: starter
+    region: oregon
+    buildCommand: "cd backend && python -m pip install --upgrade pip setuptools wheel && python -m pip install -r requirements.txt"
+    startCommand: "cd backend && celery -A app.tasks.celery_app worker --loglevel=info --pool=solo"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AWS_ACCESS_KEY
+        sync: false
+      - key: AWS_SECRET_KEY
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_ENDPOINT_URL
         sync: false

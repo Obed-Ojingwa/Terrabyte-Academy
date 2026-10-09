@@ -1,49 +1,106 @@
 "use client";
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { BadgeCheck, ShieldCheck } from "lucide-react";
 import api from "@/lib/api";
 import PublicHeader from "@/components/ui/PublicHeader";
 
+type VerificationResult = {
+  certificate_number: string;
+  recipient_name: string;
+  course_title: string;
+  issued_at: string;
+  status: "issued";
+  issuer: string;
+};
+
 export default function VerifyCertificatePage() {
   const [certId, setCertId] = useState("");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const verify = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!certId.trim()) return;
-    setLoading(true); setError(""); setResult(null);
-    try { const { data } = await api.get(`/certificates/verify/${certId.trim().toUpperCase()}`); setResult(data); }
-    catch { setError("Certificate not found or invalid. Please check the ID and try again."); }
-    finally { setLoading(false); }
+
+  useEffect(() => {
+    const serial = new URLSearchParams(window.location.search).get("serial")?.trim().toUpperCase();
+    if (!serial) return;
+    let active = true;
+    setCertId(serial);
+    setLoading(true);
+    setError("");
+    api.get(`/certificates/verify/${encodeURIComponent(serial)}`)
+      .then(({ data }) => { if (active) setResult(data); })
+      .catch(() => { if (active) setError("This serial number is not an issued Terrabyte Academy certificate."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const verify = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const serial = certId.trim().toUpperCase();
+    if (!serial) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
+    try {
+      const { data } = await api.get(`/certificates/verify/${encodeURIComponent(serial)}`);
+      setResult(data);
+    } catch {
+      setError("This serial number is not an issued Terrabyte Academy certificate.");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
-    <div className="min-h-screen page-light flex flex-col items-center justify-center px-6 text-slate-950 pt-20">
+    <main className="min-h-screen page-light flex flex-col items-center px-6 pb-16 pt-28 text-slate-950">
       <PublicHeader />
-      <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage:"linear-gradient(#378add 1px,transparent 1px),linear-gradient(90deg,#378add 1px,transparent 1px)",backgroundSize:"60px 60px"}}/>
-      <div className="relative w-full max-w-lg text-center">
-        <p className="text-brand-400 text-xs font-semibold uppercase tracking-widest mb-4">Certificate Verification</p>
-        <h1 className="text-3xl font-black text-white mb-3 tracking-tight">Verify a Certificate</h1>
-        <p className="text-white/40 text-sm mb-10">Enter the certificate ID found at the bottom of any Terrabyte Academy certificate</p>
-        <form onSubmit={verify} className="flex gap-3 mb-8">
-          <input value={certId} onChange={e=>setCertId(e.target.value)} placeholder="e.g. TBA-7F3A2B9C1E" className="flex-1 bg-white/[0.04] border border-white/10 focus:border-brand-500 text-white placeholder:text-white/20 rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-mono"/>
-          <button type="submit" disabled={loading} className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-6 py-3.5 rounded-xl transition-all flex items-center gap-2">{loading?<span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>:"Verify"}</button>
+      <section className="w-full max-w-xl">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-700"><ShieldCheck size={24} /></div>
+          <p className="mb-2 text-xs font-bold uppercase text-blue-700">Certificate Verification</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-950">Check authenticity</h1>
+          <p className="mt-3 text-sm text-slate-600">Enter the serial printed on a certificate, or scan its QR code to verify it automatically.</p>
+        </div>
+        <form onSubmit={verify} className="mb-6 flex gap-3">
+          <input
+            value={certId}
+            onChange={(event) => setCertId(event.target.value)}
+            placeholder="TBA-XXXXXXXXXX"
+            aria-label="Certificate serial number"
+            autoComplete="off"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3.5 font-mono text-sm text-slate-950 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          />
+          <button type="submit" disabled={loading || !certId.trim()} className="rounded-xl bg-blue-700 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
+            {loading ? "Checking..." : "Verify"}
+          </button>
         </form>
-        {error && <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 text-center"><p className="text-4xl mb-3">❌</p><p className="text-red-400 font-semibold mb-1">Certificate Not Found</p><p className="text-white/40 text-sm">{error}</p></div>}
+        {loading && <p role="status" className="py-4 text-center text-sm text-slate-600">Checking the Terrabyte Academy registry...</p>}
+        {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center"><p className="font-bold text-red-800">Certificate not verified</p><p className="mt-1 text-sm text-red-700">{error}</p></div>}
         {result && (
-          <div className="bg-white/[0.02] border border-brand-500/30 rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-brand-800/50 to-brand-900/50 px-6 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-lg">✅</div>
-              <div className="text-left"><p className="font-bold text-white">Certificate Verified</p><p className="text-white/40 text-xs">This is an authentic Terrabyte Academy certificate</p></div>
+          <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+            <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+              <BadgeCheck className="shrink-0 text-emerald-700" size={25} />
+              <div>
+                <p className="font-bold text-emerald-900">Certificate verified</p>
+                <p className="text-sm text-emerald-800">Record confirmed by Terrabyte Academy</p>
+              </div>
             </div>
-            <div className="p-6 space-y-3">
-              {[{label:"Certificate ID",value:result.certificate_number},{label:"Status",value:result.status},{label:"Issue Date",value:result.issued_at?new Date(result.issued_at).toLocaleDateString("en-NG",{year:"numeric",month:"long",day:"numeric"}):"—"}].map(({label,value})=>(
-                <div key={label} className="flex justify-between items-center text-sm border-b border-white/5 pb-3 last:border-0 last:pb-0">
-                  <span className="text-white/40">{label}</span><span className="text-white font-medium">{value}</span>
+            <dl className="divide-y divide-slate-100 px-5">
+              {[
+                { label: "Awarded to", value: result.recipient_name },
+                { label: "Programme", value: result.course_title },
+                { label: "Serial number", value: result.certificate_number },
+                { label: "Date awarded", value: new Date(result.issued_at).toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric" }) },
+                { label: "Issuer", value: result.issuer },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex flex-wrap justify-between gap-2 py-3 text-sm">
+                  <dt className="text-slate-500">{label}</dt><dd className="text-right font-semibold text-slate-900">{value}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
+            <p className="px-5 pb-5 text-xs text-slate-500">Verified on <a className="font-semibold text-blue-700 underline" href="https://www.terrabyte.ng">www.terrabyte.ng</a></p>
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

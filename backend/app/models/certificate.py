@@ -12,9 +12,14 @@ class Certificate(Base):
     student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     course_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
     certificate_number: Mapped[str] = mapped_column(String(100), unique=True)
+    recipient_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
     s3_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending")
     requested_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     issued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     student: Mapped["User"] = relationship(foreign_keys=[student_id])
     course: Mapped["Course"] = relationship(foreign_keys=[course_id])
+
+    @property
+    def pdf_available(self) -> bool:
+        return self.status == "issued" and bool(self.s3_key)

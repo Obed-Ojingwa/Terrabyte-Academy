@@ -27,6 +27,7 @@ type StudentProfile = {
   id?: string;
   first_name?: string;
   last_name?: string;
+  certificate_name?: string;
   email?: string;
   phone?: string;
   avatar_url?: string;
@@ -56,6 +57,7 @@ export default function StudentProfilePage() {
   // Form state for editing basic profile info
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [certificateName, setCertificateName] = useState("");
   const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
@@ -63,21 +65,23 @@ export default function StudentProfilePage() {
     if (!profile) return;
     setFirstName(profile.first_name || "");
     setLastName(profile.last_name || "");
+    setCertificateName(profile.certificate_name || "");
     setPhone(profile.phone || "");
     setAvatarUrl(profile.avatar_url || "");
   }, [profile]);
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { first_name: string; last_name: string; phone?: string; avatar_url?: string }) =>
+    mutationFn: async (payload: { first_name: string; last_name: string; certificate_name: string; phone?: string; avatar_url?: string }) =>
       (await api.patch("/users/me", payload)).data,
     onSuccess: (data) => {
-      queryClient.setQueryData(["student-profile"], data);
+      queryClient.setQueryData(["student-profile"], (previous: StudentProfile | undefined) => ({ ...previous, ...data }));
       updateUser({
         ...data,
         profile: {
           id: data.id,
           first_name: data.first_name,
           last_name: data.last_name,
+          certificate_name: data.certificate_name,
           phone: data.phone,
           avatar_url: data.avatar_url,
         },
@@ -195,6 +199,7 @@ export default function StudentProfilePage() {
     await updateMutation.mutateAsync({
       first_name: firstName,
       last_name: lastName,
+      certificate_name: certificateName.trim(),
       phone: phone || undefined,
       avatar_url: avatarUrl || undefined
     });
@@ -298,6 +303,20 @@ export default function StudentProfilePage() {
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-all duration-200"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-700" htmlFor="certificate-name">Name to print on certificates</label>
+                <input
+                  id="certificate-name"
+                  value={certificateName}
+                  onChange={(e) => setCertificateName(e.target.value)}
+                  maxLength={150}
+                  required
+                  autoComplete="name"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-all duration-200"
+                />
+                <p className="text-xs text-slate-500">Use the exact name you want printed. You can change it before a certificate is issued.</p>
               </div>
 
               <div className="space-y-3">

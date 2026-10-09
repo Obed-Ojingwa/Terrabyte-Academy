@@ -17,6 +17,10 @@ class UserSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CertificateStudentSummary(UserSummary):
+    certificate_name: Optional[str] = None
+
+
 class CourseSummary(BaseModel):
     id: UUID
     title: str
@@ -375,7 +379,7 @@ class EnrollmentResponse(BaseModel):
     progress: Optional[int] = None
     enrolled_at: datetime
     completed_at: Optional[datetime] = None
-    student: Optional[UserSummary] = None
+    student: Optional[CertificateStudentSummary] = None
     course: Optional[CourseResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -386,14 +390,24 @@ class CertificateResponse(BaseModel):
     student_id: UUID
     course_id: UUID
     certificate_number: str
-    s3_key: Optional[str] = None
+    recipient_name: Optional[str] = None
     status: str
+    pdf_available: bool = False
     requested_at: datetime
     issued_at: Optional[datetime] = None
     student: Optional[UserSummary] = None
     course: Optional[CourseSummary] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CertificateVerificationResponse(BaseModel):
+    certificate_number: str
+    recipient_name: str
+    course_title: str
+    issued_at: datetime
+    status: Literal["issued"]
+    issuer: str = "Terrabyte Academy"
 
 
 class NotificationResponse(BaseModel):
@@ -445,6 +459,7 @@ class StudentProfileResponse(BaseModel):
     id: UUID
     first_name: str
     last_name: str
+    certificate_name: Optional[str] = None
     email: str
     phone: Optional[str] = None
     avatar_url: Optional[str] = None

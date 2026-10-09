@@ -221,6 +221,7 @@ async def get_student_profile(current_user=Depends(get_current_user), db: AsyncS
         id=user.id,
         first_name=user.first_name,
         last_name=user.last_name,
+        certificate_name=user.certificate_name,
         email=user.email,
         phone=user.phone,
         avatar_url=user.avatar_url,

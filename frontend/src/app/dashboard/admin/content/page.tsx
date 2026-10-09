@@ -29,7 +29,12 @@ export default function AdminContentPage() {
   const { data: blogPosts = [] } = useQuery({ queryKey: ["admin-blog"], queryFn: async () => (await api.get("/blog")).data });
   const { data: events = [] } = useQuery({ queryKey: ["admin-events"], queryFn: async () => (await api.get("/events")).data });
   const { data: paymentsData } = useQuery({ queryKey: ["admin-payments"], queryFn: async () => (await api.get("/payments/history")).data });
-  const { data: certificates = [] } = useQuery({ queryKey: ["admin-certificates"], queryFn: async () => (await api.get("/certificates/")).data });
+  const { data: certificates = [] } = useQuery({
+    queryKey: ["admin-certificates"],
+    queryFn: async () => (await api.get("/certificates/")).data,
+    refetchInterval: (query) =>
+      query.state.data?.some((certificate: { status: string }) => certificate.status === "generating") ? 3000 : false,
+  });
 
   const savePost = useMutation({
     mutationFn: async () => {
@@ -91,7 +96,7 @@ export default function AdminContentPage() {
     mutationFn: async (certificateId: string) => api.put(`/certificates/${certificateId}/approve`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-certificates"] });
-      toast.success("Certificate approved");
+      toast.success("Certificate generation started");
     },
     onError: () => toast.error("Unable to approve certificate"),
   });
@@ -207,23 +212,23 @@ export default function AdminContentPage() {
         <div className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">Certificate approvals</h2>
-            <span className="text-sm text-slate-500">{certificates.filter((item: any) => item.status !== "issued").length} pending</span>
+            <span className="text-sm text-slate-500">{certificates.filter((item: any) => item.status !== "issued" || !item.pdf_available).length} pending</span>
           </div>
           <div className="space-y-3">
             {certificates.map((certificate: any) => (
               <div key={certificate.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div>
                   <p className="font-semibold">{certificate.certificate_number}</p>
-                  <p className="mt-1 text-sm text-slate-500">{certificate.student?.first_name} {certificate.student?.last_name}</p>
+                  <p className="mt-1 text-sm text-slate-500">{certificate.student?.certificate_name || `${certificate.student?.first_name ?? ""} ${certificate.student?.last_name ?? ""}`}</p>
                   <p className="text-xs text-slate-400">{certificate.course?.title ?? "Course"}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${certificate.status === "issued" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"}`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${certificate.status === "issued" ? "bg-emerald-500/10 text-emerald-500" : certificate.status === "failed" ? "bg-red-500/10 text-red-700" : "bg-amber-500/10 text-amber-600"}`}>
                     {certificate.status}
                   </span>
-                  {certificate.status !== "issued" && (
-                    <button onClick={() => approveCertificate.mutate(certificate.id)} className="rounded-lg border border-brand-500/20 bg-brand-500/10 px-3 py-1.5 text-xs text-brand-700 hover:bg-brand-500/20">
-                      Approve
+                  {(certificate.status !== "issued" || !certificate.pdf_available) && (
+                    <button onClick={() => approveCertificate.mutate(certificate.id)} disabled={approveCertificate.isPending || certificate.status === "generating"} className="rounded-lg border border-brand-500/20 bg-brand-500/10 px-3 py-1.5 text-xs text-brand-700 hover:bg-brand-500/20 disabled:opacity-60">
+                      {certificate.status === "failed" ? "Retry" : certificate.status === "generating" ? "Generating..." : certificate.status === "issued" ? "Rebuild PDF" : "Issue"}
                     </button>
                   )}
                 </div>

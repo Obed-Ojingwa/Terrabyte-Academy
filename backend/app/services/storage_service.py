@@ -4,6 +4,7 @@ from typing import BinaryIO
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from fastapi import HTTPException
 
 from app.config import settings
@@ -75,3 +76,22 @@ class StorageService:
 
         base_url = (getattr(settings, "BACKEND_BASE_URL", "") or "http://localhost:8000").rstrip("/")
         return f"{base_url}/storage/{normalized_key}"
+
+    def download_file(self, key: str) -> bytes:
+        normalized_key = key.lstrip("/")
+        if self.client:
+            if not self.bucket:
+                raise HTTPException(status_code=503, detail="Object storage bucket is not configured")
+            try:
+                return self.client.get_object(Bucket=self.bucket, Key=normalized_key)["Body"].read()
+            except ClientError as exc:
+                error_code = exc.response.get("Error", {}).get("Code")
+                if error_code in {"NoSuchKey", "404", "NotFound"}:
+                    raise FileNotFoundError(normalized_key) from exc
+                raise HTTPException(status_code=503, detail="Certificate storage is unavailable") from exc
+
+        root = self.local_root.resolve()
+        path = (root / normalized_key).resolve()
+        if root not in path.parents:
+            raise HTTPException(status_code=400, detail="Invalid storage key")
+        return path.read_bytes()

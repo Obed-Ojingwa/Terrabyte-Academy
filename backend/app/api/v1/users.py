@@ -17,6 +17,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
+        "certificate_name": current_user.certificate_name,
         "phone": current_user.phone,
         "avatar_url": current_user.avatar_url,
         "role": {"name": current_user.role.name},
@@ -30,6 +31,8 @@ async def update_me(payload: UserUpdateRequest, current_user: User = Depends(get
         current_user.first_name = payload.first_name
     if payload.last_name is not None:
         current_user.last_name = payload.last_name
+    if payload.certificate_name is not None:
+        current_user.certificate_name = payload.certificate_name
     if payload.phone is not None:
         current_user.phone = payload.phone
     if payload.avatar_url is not None:
@@ -42,6 +45,7 @@ async def update_me(payload: UserUpdateRequest, current_user: User = Depends(get
         "email": current_user.email,
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
+        "certificate_name": current_user.certificate_name,
         "phone": current_user.phone,
         "avatar_url": current_user.avatar_url,
         "role": {"name": current_user.role.name},

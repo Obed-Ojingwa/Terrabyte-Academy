@@ -43,6 +43,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
+    certificate_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
