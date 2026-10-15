@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { BookOpen, Layers, PlayCircle, Clock3, Search, Sliders, TrendingUp } from "lucide-react";
 
 export default function StudentCoursesPage() {
-  const qc = useQueryClient();
+  const router = useRouter();
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -36,17 +36,6 @@ export default function StudentCoursesPage() {
       params.append("page_size", "100"); // fetch a reasonable number for client-side filtering/pagination
       return (await api.get(`/courses?${params.toString()}`)).data;
     },
-  });
-
-  const enrollMutation = useMutation({
-    mutationFn: async (courseId: string) =>
-      api.post("/enrollments", { course_id: courseId, mode: "online" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["my-enrollments"] });
-      toast.success("Enrollment request received");
-    },
-    onError: (error: any) =>
-      toast.error(error?.response?.data?.detail || "Unable to enroll right now"),
   });
 
   // Fetch my enrollments
@@ -179,17 +168,14 @@ export default function StudentCoursesPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          enrollMutation.mutate(course.id);
+                          router.push(`/public/courses/${course.id}`);
                         }}
-                        disabled={
-                          enrolledCourseIds.has(course.id) ||
-                          enrollMutation.isPending
-                        }
+                        disabled={enrolledCourseIds.has(course.id)}
                         className="rounded-full border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                       >
                         {enrolledCourseIds.has(course.id)
                           ? "Enrolled"
-                          : "Enroll"}
+                          : "View & enroll"}
                       </button>
                     </div>
                   </div>
@@ -247,14 +233,14 @@ export default function StudentCoursesPage() {
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            enrollMutation.mutate(course.id);
+                            router.push(`/public/courses/${course.id}`);
                           }}
-                          disabled={isEnrolled || enrollMutation.isPending}
+                          disabled={isEnrolled}
                           className="rounded-full border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                         >
                           {isEnrolled
                             ? "Already enrolled"
-                            : "Enroll"}
+                            : "View & enroll"}
                         </button>
                       </div>
                     </button>

@@ -6,7 +6,6 @@ from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.enrollment import Enrollment, LessonProgress
 from app.models.course import Course, Module, Lesson
-from app.models.payment import Payment
 from app.schemas.lms import EnrollmentCreate, EnrollmentResponse, EnrollmentUpdate, LessonProgressResponse
 
 router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
@@ -97,10 +96,16 @@ async def get_enrollment(enrollment_id: str, current_user=Depends(get_current_us
 
 @router.post("/", response_model=EnrollmentResponse, status_code=201)
 async def create_enrollment(payload: EnrollmentCreate, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role.name != "student":
+        raise HTTPException(status_code=403, detail="Only students can enroll in courses")
+
     course_result = await db.execute(select(Course).where(Course.id == payload.course_id))
     course = course_result.scalar_one_or_none()
-    if not course:
+    if not course or not course.is_published:
         raise HTTPException(status_code=404, detail="Course not found")
+
+    if float(course.price or 0) > 0:
+        raise HTTPException(status_code=409, detail="Paid courses must be enrolled through the payment workflow")
 
     existing_enrollment = (
         await db.execute(
@@ -114,22 +119,11 @@ async def create_enrollment(payload: EnrollmentCreate, current_user=Depends(get_
     if existing_enrollment:
         raise HTTPException(status_code=409, detail="You are already enrolled in this course")
 
-    if float(course.price or 0) > 0:
-        payment_result = await db.execute(
-            select(Payment).where(
-                Payment.student_id == current_user.id,
-                Payment.course_id == course.id,
-                Payment.status.in_(["pending", "success"]),
-            )
-        )
-        if payment_result.scalar_one_or_none():
-            raise HTTPException(status_code=409, detail="A payment for this course is already in progress or completed")
-
     enrollment = Enrollment(
         student_id=current_user.id,
         course_id=course.id,
         mode=payload.mode,
-        status="active" if float(course.price or 0) == 0 else "pending",
+        status="active",
     )
     db.add(enrollment)
     await db.commit()

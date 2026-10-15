@@ -14,6 +14,7 @@ backend/tests/
 !backend/tests/
 backend/tests/*
 !backend/tests/test_exams.py
+!backend/tests/test_enrollment_workflow.py
 backend/verify_admin.py
 backend/seed_data.py
 
@@ -43,3 +44,4 @@ ssl/*.key
 ssl/*.crt
 !PRODUCTION_READINESS_AUDIT.md
 CERTIFICATE_ISSUANCE_IMPLEMENTATION_GUIDE.md
+ENROLLMENT_TO_CERTIFICATE_WORKFLOW.md
