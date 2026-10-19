@@ -35,6 +35,20 @@ cd backend
 celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
 ```
 
+### 4. Local demo logins
+
+To create one local login per dashboard role and a small sample course workflow, start from the `backend` directory with a local SQLite development database:
+
+```powershell
+$env:DATABASE_URL = "sqlite+aiosqlite:///./terrabyte.db"
+$env:APP_ENV = "development"
+python -m app.seed_demo_accounts
+Remove-Item Env:APP_ENV
+Remove-Item Env:DATABASE_URL
+```
+
+The command refuses non-SQLite databases and only creates demo users when their demo email is unused. It prints a randomly generated password once for each new account; copy the output to a secure location. Rerunning it does not reset existing passwords. Demo emails are `superadmin.demo@example.com`, `admin.demo@example.com`, `tutor.demo@example.com`, and `student.demo@example.com`. The seeded `DEMO: Introduction to Geospatial Analysis` course gives the tutor an assigned course and the student an active enrollment, lesson progress, an assignment, and an exam. The printed dashboard links are `/dashboard/superadmin`, `/dashboard/admin`, `/dashboard/tutor`, and `/dashboard/student`. The application does not create a fixed-password administrator during normal startup.
+
 ## Docker (Production)
 ```bash
 docker-compose up --build -d

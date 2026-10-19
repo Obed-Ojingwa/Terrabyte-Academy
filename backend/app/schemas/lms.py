@@ -130,6 +130,24 @@ class AssignmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class StudentAssignmentResponse(BaseModel):
+    id: UUID
+    course_id: UUID
+    tutor_id: Optional[UUID] = None
+    title: str
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    max_score: int
+    status: Optional[str] = None
+    grade: Optional[float] = None
+    submitted_at: Optional[datetime] = None
+    created_at: datetime
+    course: Optional[CourseSummary] = None
+    tutor: Optional[UserSummary] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ExamQuestionResponse(BaseModel):
     id: UUID
     exam_id: UUID
@@ -448,7 +466,7 @@ class FeedbackResponse(BaseModel):
 class StudentDashboardResponse(BaseModel):
     enrollments: list[EnrollmentResponse] = Field(default_factory=list)
     upcoming_events: list[EventResponse] = Field(default_factory=list)
-    assignments_due: list[AssignmentResponse] = Field(default_factory=list)
+    assignments_due: list[StudentAssignmentResponse] = Field(default_factory=list)
     recent_exam_results: list[ExamResultResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

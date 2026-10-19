@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, ForeignKey, Numeric, DateTime
+from sqlalchemy import JSON, String, ForeignKey, Numeric, DateTime
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from datetime import datetime
@@ -18,7 +18,7 @@ class Payment(Base):
     gateway_ref: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending")
     payment_type: Mapped[str] = mapped_column(String(50), default="course")
-    metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", JSON().with_variant(JSONB, "postgresql"), nullable=True)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     student: Mapped["User"] = relationship(foreign_keys=[student_id])

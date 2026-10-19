@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.database import get_db
 from app.api.deps import get_current_user
@@ -36,11 +36,18 @@ async def get_student_dashboard(current_user=Depends(get_current_user), db: Asyn
     # enrollments with course context and progress
     enroll_q = (
         select(Enrollment)
-        .options(joinedload(Enrollment.course).joinedload(Course.modules).joinedload(Module.lessons))
+        .options(
+            joinedload(Enrollment.course)
+            .joinedload(Course.tutor),
+            joinedload(Enrollment.course)
+            .joinedload(Course.modules)
+            .joinedload(Module.lessons)
+            .joinedload(Lesson.materials)
+        )
         .where(Enrollment.student_id == current_user.id)
     )
     enroll_res = await db.execute(enroll_q)
-    enrollments = enroll_res.scalars().all()
+    enrollments = enroll_res.unique().scalars().all()
 
     # attach progress to enrollments
     for enrollment in enrollments:
@@ -65,7 +72,14 @@ async def get_student_dashboard(current_user=Depends(get_current_user), db: Asyn
     upcoming_events = event_res.scalars().all()
 
     # assignments due for enrolled courses
-    assign_q = select(Assignment).where(Assignment.course_id.in_(course_ids)).order_by(Assignment.due_date.asc()) if course_ids else select(Assignment).where(False)
+    assign_q = (
+        select(Assignment)
+        .options(selectinload(Assignment.course))
+        .where(Assignment.course_id.in_(course_ids))
+        .order_by(Assignment.due_date.asc())
+        if course_ids
+        else select(Assignment).where(False)
+    )
     assign_res = await db.execute(assign_q.limit(20))
     assignments_due = assign_res.scalars().all()
 

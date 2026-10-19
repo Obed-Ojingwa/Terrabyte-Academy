@@ -1,9 +1,8 @@
 import asyncio
 from sqlalchemy import select
 
-from app.core.security import hash_password
 from app.database import AsyncSessionLocal, Base, engine
-from app.models.user import Permission, Role, User
+from app.models.user import Permission, Role
 from app.models.settings import CertificateTemplate, PlatformSetting
 
 
@@ -46,22 +45,6 @@ async def seed_database() -> None:
                 if permission not in role.permissions:
                     role.permissions.append(permission)
 
-        admin_email = "admin@terrabyteacademy.com"
-        result = await session.execute(select(User).where(User.email == admin_email))
-        admin_user = result.scalar_one_or_none()
-        if admin_user is None:
-            admin_user = User(
-                email=admin_email,
-                password_hash=hash_password("Admin@12345"),
-                first_name="Terrabyte",
-                last_name="Admin",
-                role_id=existing_roles["super_admin"].id,
-                is_active=True,
-                is_verified=True,
-            )
-            session.add(admin_user)
-            await session.flush()
-
         default_settings = [
             ("company_name", "Terrabyte Academy", "Platform display name"),
             ("company_registration", "", "Company registration number"),
@@ -75,7 +58,6 @@ async def seed_database() -> None:
                     key=key,
                     value=value,
                     description=description,
-                    updated_by=admin_user.id if admin_user else None,
                 )
                 session.add(setting)
 
@@ -93,7 +75,6 @@ async def seed_database() -> None:
                 company_name="Terrabyte Academy",
                 company_registration="",
                 logo_url="",
-                created_by=admin_user.id if admin_user else None,
             )
             session.add(default_template)
 

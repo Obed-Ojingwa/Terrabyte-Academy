@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, Boolean, ForeignKey, Integer, Text, DateTime, Numeric, CheckConstraint, UniqueConstraint, Index
+from sqlalchemy import JSON, String, Boolean, ForeignKey, Integer, Text, DateTime, Numeric, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from datetime import datetime, timezone
@@ -34,7 +34,7 @@ class ExamQuestion(Base):
     exam_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exams.id", ondelete="CASCADE"))
     question: Mapped[str] = mapped_column(Text)
     type: Mapped[str] = mapped_column(String(50))
-    options: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    options: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     correct: Mapped[str | None] = mapped_column(Text, nullable=True)
     points: Mapped[int] = mapped_column(Integer, default=1)
     position: Mapped[int] = mapped_column(Integer, default=0)
@@ -64,8 +64,8 @@ class ExamResult(Base):
     status: Mapped[str] = mapped_column(String(30), default="graded", server_default="graded")
     auto_score: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
     score: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
-    answers: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    manual_grades: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    answers: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
+    manual_grades: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
     passed: Mapped[bool] = mapped_column(Boolean, default=False)
     taken_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
