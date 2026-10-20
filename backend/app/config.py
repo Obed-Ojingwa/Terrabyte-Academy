@@ -10,18 +10,18 @@ class Settings(BaseSettings):
     APP_NAME: str = "Terrabyte Academy"
     DEBUG: bool = False
     SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,https://terrabyte-academy.onrender.com,http://localhost:3000"
+    ALLOWED_ORIGINS: str = "https://terrabyte-acad.vercel.app,https://terrabyte-academy.onrender.com,https://www.terrabyte.ng"
     TRUSTED_HOSTS: str = "localhost,127.0.0.1,testserver,terrabyte-acad.vercel.app,terrabyte-academy.onrender.com"
     LOG_LEVEL: str = "INFO"
 
     @property
     def allowed_origins_list(self) -> List[str]:
         if not self.ALLOWED_ORIGINS:
-            return ["https://terrabyte-acad.vercel.app", "http://localhost:3000"]
+            return ["https://terrabyte-acad.vercel.app", "https://www.terrabyte.ng"]
 
         value = str(self.ALLOWED_ORIGINS).strip()
         if not value:
-            return ["https://terrabyte-acad.vercel.app", "http://localhost:3000"]
+            return ["https://terrabyte-acad.vercel.app", "https://www.terrabyte.ng"]
 
         if value.startswith("["):
             try:
@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     PAYSTACK_SECRET_KEY: str = ""
     PAYSTACK_PUBLIC_KEY: str = ""
     BACKEND_BASE_URL: str = "https://terrabyte-academy.onrender.com"
-    FRONTEND_BASE_URL: str = "https://terrabyte-acad.vercel.app"
+    FRONTEND_BASE_URL: str = "https://www.terrabyte.ng"
 
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
