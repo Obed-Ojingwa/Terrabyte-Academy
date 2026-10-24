@@ -2,12 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { toast } from "react-hot-toast";
 import api from "@/lib/api";
 import { BookOpen, Layers, PlayCircle, Clock3, Search, Sliders, TrendingUp } from "lucide-react";
+import PaystackButton from "@/components/payments/PaystackButton";
+import { formatCurrency } from "@/lib/utils";
 
 export default function StudentCoursesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -42,6 +47,21 @@ export default function StudentCoursesPage() {
   const { data: enrollmentsData } = useQuery({
     queryKey: ["my-enrollments"],
     queryFn: async () => (await api.get("/enrollments")).data,
+  });
+
+  const enrollMutation = useMutation({
+    mutationFn: async (course: any) =>
+      (await api.post("/enrollments", { course_id: course.id, mode: course.mode || "online" })).data,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
+      toast.success("You are now enrolled in this course.");
+    },
+    onError: (error) => {
+      const detail = error instanceof AxiosError
+        ? (error as AxiosError<{ detail?: string }>).response?.data?.detail
+        : undefined;
+      toast.error(detail || "Unable to apply for this course. Please try again.");
+    },
   });
 
   const courses = useMemo(() => coursesData?.items ?? [], [coursesData]);
@@ -203,22 +223,26 @@ export default function StudentCoursesPage() {
                 {filteredCourses.map((course: any) => {
                   const isEnrolled = enrolledCourseIds.has(course.id);
                   return (
-                    <button
+                    <div
                       key={course.id}
-                      onClick={() => setSelectedCourseId(course.id)}
-                      className={`w-full rounded-2xl border px-4 py-4 text-left ${
+                      className={`w-full rounded-2xl border px-4 py-4 ${
                         selectedCourseId === course.id
                           ? "border-brand-500 bg-brand-500/10"
                           : "border-slate-200 bg-slate-50"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCourseId(course.id)}
+                          aria-pressed={selectedCourseId === course.id}
+                          className="text-left"
+                        >
                           <div className="font-semibold text-slate-950">{course.title}</div>
                           <div className="mt-1 text-xs text-slate-500">
                             {course.category || "General"} • {course.mode}
                           </div>
-                        </div>
+                        </button>
                         <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                           isEnrolled
                             ? "bg-emerald-50 text-emerald-700"
@@ -231,19 +255,13 @@ export default function StudentCoursesPage() {
                         <span>{course.modules?.length ?? 0} modules</span>
                         <button
                           type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            router.push(`/public/courses/${course.id}`);
-                          }}
-                          disabled={isEnrolled}
-                          className="rounded-full border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                          onClick={() => setSelectedCourseId(course.id)}
+                          className="rounded-full border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-700"
                         >
-                          {isEnrolled
-                            ? "Already enrolled"
-                            : "View & enroll"}
+                          View details
                         </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -329,6 +347,53 @@ export default function StudentCoursesPage() {
                       No lessons are available for this course.
                     </p>
                   )}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">
+                      {enrolledCourseIds.has(selectedCourse.id)
+                        ? "You are enrolled in this course"
+                        : selectedCourse.price === 0
+                          ? "Apply for this free course"
+                          : `Apply for ${formatCurrency(selectedCourse.price)}`}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {enrolledCourseIds.has(selectedCourse.id)
+                        ? "Open your course from My Courses to continue learning."
+                        : selectedCourse.price === 0
+                          ? "Your enrollment will be activated immediately."
+                          : "Continue to secure payment to complete your application."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {!enrolledCourseIds.has(selectedCourse.id) &&
+                      (selectedCourse.price === 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => enrollMutation.mutate(selectedCourse)}
+                          disabled={enrollMutation.isPending}
+                          className="rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {enrollMutation.isPending ? "Applying..." : "Apply now"}
+                        </button>
+                      ) : (
+                        <PaystackButton
+                          courseId={selectedCourse.id}
+                          amount={selectedCourse.price}
+                          courseName={selectedCourse.title}
+                          mode={selectedCourse.mode || "online"}
+                        />
+                      ))}
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/public/courses/${selectedCourse.id}`)}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Full course page
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

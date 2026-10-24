@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import { toast } from "react-hot-toast";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
@@ -59,7 +60,6 @@ export default function StudentProfilePage() {
   const [lastName, setLastName] = useState("");
   const [certificateName, setCertificateName] = useState("");
   const [phone, setPhone] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     if (!profile) return;
@@ -67,11 +67,10 @@ export default function StudentProfilePage() {
     setLastName(profile.last_name || "");
     setCertificateName(profile.certificate_name || "");
     setPhone(profile.phone || "");
-    setAvatarUrl(profile.avatar_url || "");
   }, [profile]);
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { first_name: string; last_name: string; certificate_name: string; phone?: string; avatar_url?: string }) =>
+    mutationFn: async (payload: { first_name: string; last_name: string; certificate_name: string; phone?: string }) =>
       (await api.patch("/users/me", payload)).data,
     onSuccess: (data) => {
       queryClient.setQueryData(["student-profile"], (previous: StudentProfile | undefined) => ({ ...previous, ...data }));
@@ -89,6 +88,29 @@ export default function StudentProfilePage() {
       toast.success("Profile updated successfully");
     },
     onError: () => toast.error("Unable to update profile"),
+  });
+
+  const avatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return (await api.post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })).data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["student-profile"], (previous: StudentProfile | undefined) =>
+        previous ? { ...previous, avatar_url: data.avatar_url } : previous
+      );
+      updateUser({ avatar_url: data.avatar_url });
+      toast.success("Profile photo updated successfully");
+    },
+    onError: (error) => {
+      const detail = error instanceof AxiosError
+        ? (error as AxiosError<{ detail?: string }>).response?.data?.detail
+        : undefined;
+      toast.error(detail || "Unable to upload profile photo");
+    },
   });
 
   if (isError) {
@@ -200,8 +222,7 @@ export default function StudentProfilePage() {
       first_name: firstName,
       last_name: lastName,
       certificate_name: certificateName.trim(),
-      phone: phone || undefined,
-      avatar_url: avatarUrl || undefined
+      phone: phone || undefined
     });
   };
 
@@ -251,9 +272,17 @@ export default function StudentProfilePage() {
           {/* Personal Info Card */}
           <section className="page-surface rounded-2xl p-7 shadow-sm border border-slate-100">
             <div className="mb-6 flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-xl font-black">
-                {profile.first_name?.[0]}{profile.last_name?.[0]}
-              </div>
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={`${profile.first_name} ${profile.last_name}`}
+                  className="h-14 w-14 rounded-2xl object-cover"
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-xl font-black">
+                  {profile.first_name?.[0]}{profile.last_name?.[0]}
+                </div>
+              )}
               <div>
                 <p className="text-xl font-black">{profile.first_name} {profile.last_name}</p>
                 <p className="mt-1 text-sm text-slate-500 capitalize">{profile.role?.name || "Student"}</p>
@@ -329,12 +358,28 @@ export default function StudentProfilePage() {
               </div>
 
               <div className="space-y-3">
-                <label className="text-sm font-medium text-slate-700">Avatar URL (optional)</label>
+                <label htmlFor="profile-photo" className="text-sm font-medium text-slate-700">Profile photo</label>
                 <input
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-all duration-200"
+                  id="profile-photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={avatarMutation.isPending}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("Profile photos must be 5 MB or smaller");
+                      } else {
+                        avatarMutation.mutate(file);
+                      }
+                    }
+                    event.currentTarget.value = "";
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700"
                 />
+                <p className="text-xs text-slate-500">
+                  {avatarMutation.isPending ? "Uploading photo..." : "Upload a JPEG, PNG, or WebP image (maximum 5 MB)."}
+                </p>
               </div>
 
               <button

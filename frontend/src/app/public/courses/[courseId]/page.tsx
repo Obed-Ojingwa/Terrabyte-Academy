@@ -10,6 +10,7 @@ import PaystackButton from "@/components/payments/PaystackButton";
 import { useCourse } from "@/hooks/useCourses";
 import api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 
 type CourseModuleLesson = {
   id: string;
@@ -26,6 +27,7 @@ type CourseModule = {
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuthStore();
   const rawCourseId = Array.isArray(params?.courseId) ? params.courseId[0] : params?.courseId;
   const courseId = typeof rawCourseId === "string" ? rawCourseId : "";
   const { data: course, isLoading, isError } = useCourse(courseId);
@@ -164,20 +166,27 @@ export default function CourseDetailPage() {
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.25em]">Ready to enroll?</p>
+                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.25em]">Ready to apply?</p>
                     <p className="mt-2 text-3xl font-black text-slate-950">{freeCourse ? "Free course" : formatCurrency(course.price)}</p>
                   </div>
                   <div className="rounded-full bg-brand-500 px-3 py-2 text-sm font-semibold text-white">{course.mode}</div>
                 </div>
                 <div className="mt-6">
-                  {freeCourse ? (
+                  {!user || user.role.name !== "student" ? (
+                    <Link
+                      href="/auth/login"
+                      className="block w-full rounded-2xl bg-brand-500 py-4 text-center font-bold text-white transition-all hover:bg-brand-600"
+                    >
+                      Sign in as a student to apply
+                    </Link>
+                  ) : freeCourse ? (
                     <button
                       type="button"
                       onClick={() => enrollMutation.mutate()}
                       disabled={enrollMutation.isPending}
                       className="w-full rounded-2xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-4 transition-all"
                     >
-                      {enrollMutation.isPending ? "Enrolling..." : "Enroll for free"}
+                      {enrollMutation.isPending ? "Applying..." : "Apply for free"}
                     </button>
                   ) : (
                     <PaystackButton courseId={course.id} amount={course.price} courseName={course.title} mode={course.mode} />

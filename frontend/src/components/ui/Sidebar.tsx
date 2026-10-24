@@ -101,7 +101,11 @@ function SidebarContent({ navItems, pathname, role, user, onLogout }: { navItems
       </nav>
       <div className="p-4 border-t border-white/[0.08]">
         <div className="flex items-center gap-3 mb-3 px-1">
-          <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-brand-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+          )}
           <div className="min-w-0 flex-1"><p className="text-xs font-semibold text-white truncate">{user?.first_name} {user?.last_name}</p><p className="text-[10px] text-white/40 truncate">{user?.email}</p></div>
         </div>
         <button onClick={onLogout} className="flex items-center gap-2 text-xs text-white/50 hover:text-white/80 transition-colors w-full px-3 py-2 rounded-xl hover:bg-white/[0.05]"><LogOut size={13} /> Sign out</button>

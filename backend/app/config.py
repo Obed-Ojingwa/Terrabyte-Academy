@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = ""
     S3_REGION: str = "us-east-1"
     S3_ENDPOINT_URL: str = ""
+    LOCAL_STORAGE_DIR: str = "storage"
 
     PAYSTACK_SECRET_KEY: str = ""
     PAYSTACK_PUBLIC_KEY: str = ""

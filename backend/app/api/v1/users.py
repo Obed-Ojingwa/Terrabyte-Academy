@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -7,8 +9,18 @@ from app.api.deps import get_current_user, require_admin
 from app.models.user import Role, User
 from app.schemas.auth import UserCreateRequest, UserUpdateRequest
 from app.core.security import hash_password
+from app.services.storage_service import StorageService
 
 router = APIRouter(prefix="/users", tags=["Users"])
+MAX_AVATAR_SIZE = 5 * 1024 * 1024
+AVATAR_FORMATS = {
+    "image/jpeg": (".jpg", lambda content: content.startswith(b"\xff\xd8\xff")),
+    "image/png": (".png", lambda content: content.startswith(b"\x89PNG\r\n\x1a\n")),
+    "image/webp": (
+        ".webp",
+        lambda content: len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP",
+    ),
+}
 
 @router.get("/me")
 async def get_me(current_user: User = Depends(get_current_user)):
@@ -52,6 +64,45 @@ async def update_me(payload: UserUpdateRequest, current_user: User = Depends(get
         "is_verified": current_user.is_verified,
         "created_at": current_user.created_at,
     }
+
+
+@router.post("/me/avatar")
+async def upload_my_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if current_user.role.name != "student":
+        raise HTTPException(status_code=403, detail="Only students can upload a profile photo")
+
+    content_type = (file.content_type or "").lower()
+    avatar_format = AVATAR_FORMATS.get(content_type)
+    if avatar_format is None:
+        raise HTTPException(status_code=415, detail="Profile photos must be JPEG, PNG, or WebP images")
+
+    contents = await file.read(MAX_AVATAR_SIZE + 1)
+    if len(contents) > MAX_AVATAR_SIZE:
+        raise HTTPException(status_code=413, detail="Profile photos must be 5 MB or smaller")
+    if not contents or not avatar_format[1](contents):
+        raise HTTPException(status_code=415, detail="The uploaded file does not match its image type")
+
+    extension = avatar_format[0]
+    key = f"avatars/{current_user.id}/{uuid.uuid4().hex}{extension}"
+    storage = StorageService()
+    try:
+        storage.upload_file(key, contents, content_type)
+        avatar_url = storage.get_public_url(key)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unable to upload profile photo") from exc
+
+    current_user.avatar_url = avatar_url
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return {"id": str(current_user.id), "avatar_url": current_user.avatar_url}
+
 
 @router.post("/", status_code=201)
 async def create_user(payload: UserCreateRequest, current_user=Depends(require_admin), db: AsyncSession = Depends(get_db)):
