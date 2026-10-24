@@ -27,7 +27,7 @@ async def _student_can_access_assignment(current_user, assignment: Assignment, d
         select(Enrollment).where(
             Enrollment.student_id == current_user.id,
             Enrollment.course_id == assignment.course_id,
-            Enrollment.status.in_(["active", "pending", "completed"]),
+            Enrollment.status.in_(["active", "completed"]),
         )
     )
     return enrollment_result.scalar_one_or_none() is not None
@@ -50,7 +50,7 @@ async def list_assignments(
             await db.execute(
                 select(Enrollment.course_id).where(
                     Enrollment.student_id == current_user.id,
-                    Enrollment.status.in_(["active", "pending", "completed"]),
+                    Enrollment.status.in_(["active", "completed"]),
                 )
             )
         ).scalars().all()
@@ -145,6 +145,8 @@ async def create_submission(
     assignment = (await db.execute(select(Assignment).where(Assignment.id == assignment_id))).scalar_one_or_none()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+    if current_user.role.name != "student" or not await _student_can_access_assignment(current_user, assignment, db):
+        raise HTTPException(status_code=403, detail="Course payment must be approved before submitting assignments")
 
     submission = (
         await db.execute(

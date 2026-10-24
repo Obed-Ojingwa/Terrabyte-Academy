@@ -4,8 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.staticfiles import StaticFiles
 from app.api.v1.router import api_router
+from app.api.v1.storage import serve_storage_file
 from app.core.middleware import RateLimitMiddleware, VisitorLogMiddleware
 from app.config import settings
 from app.seed import sync_seed_database
@@ -36,8 +36,13 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(VisitorLogMiddleware)
 
-app.mount("/storage", StaticFiles(directory=settings.LOCAL_STORAGE_DIR, check_dir=False), name="storage")
 app.include_router(api_router, prefix="/api/v1")
+app.add_api_route(
+    "/storage/{storage_key:path}",
+    serve_storage_file,
+    methods=["GET"],
+    name="serve_public_storage_file",
+)
 
 
 @app.get("/health")

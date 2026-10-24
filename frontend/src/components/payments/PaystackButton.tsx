@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
@@ -9,6 +10,7 @@ interface Props { courseId: string; amount: number; courseName: string; mode: st
 
 export default function PaystackButton({ courseId, amount, courseName, mode }: Props) {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const handlePayment = async () => {
     if (!user) return toast.error("Please sign in to proceed");
@@ -18,7 +20,8 @@ export default function PaystackButton({ courseId, amount, courseName, mode }: P
       if (data.authorization_url) {
         window.location.href = data.authorization_url;
       } else {
-        toast.success(data.message || "Payment record created. Please follow up with support.");
+        await queryClient.invalidateQueries({ queryKey: ["student-payments"] });
+        toast(data.message || "Payment reference created. You can report a transfer from your dashboard.");
       }
     } catch {
       toast.error("Payment initialization failed. Try again.");

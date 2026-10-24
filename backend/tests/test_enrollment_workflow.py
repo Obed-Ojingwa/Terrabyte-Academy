@@ -56,14 +56,9 @@ def test_only_students_can_enroll():
     ("course", "status_code", "message"),
     [
         (SimpleNamespace(id=uuid4(), is_published=False, price=0), 404, "Course not found"),
-        (
-            SimpleNamespace(id=uuid4(), is_published=True, price=100),
-            409,
-            "Paid courses must be enrolled through the payment workflow",
-        ),
     ],
 )
-def test_direct_enrollment_rejects_unpublished_and_paid_courses(course, status_code, message):
+def test_enrollment_rejects_unpublished_courses(course, status_code, message):
     db = FakeDB(FakeResult(course))
 
     with pytest.raises(HTTPException) as error:
@@ -78,6 +73,29 @@ def test_direct_enrollment_rejects_unpublished_and_paid_courses(course, status_c
     assert error.value.status_code == status_code
     assert error.value.detail == message
     assert not db.committed
+
+
+def test_paid_course_application_is_created_pending(monkeypatch):
+    student_id = uuid4()
+    course = SimpleNamespace(id=uuid4(), is_published=True, price=100)
+    db = FakeDB(FakeResult(course), FakeResult(None))
+
+    async def attach_context(enrollment, current_user, session):
+        return enrollment
+
+    monkeypatch.setattr(enrollments, "_attach_course_context", attach_context)
+    result = asyncio.run(
+        enrollments.create_enrollment(
+            EnrollmentCreate(course_id=course.id, mode="online"),
+            SimpleNamespace(id=student_id, role=SimpleNamespace(name="student")),
+            db,
+        )
+    )
+
+    assert result.status == "pending"
+    assert result.student_id == student_id
+    assert result.course_id == course.id
+    assert db.committed
 
 
 def test_free_published_course_enrollment_is_activated(monkeypatch):

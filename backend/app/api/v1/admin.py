@@ -19,7 +19,6 @@ from app.schemas.admin import (
     StudentCourseProgress,
     CourseStudentProgress,
 )
-from app.services.storage_service import StorageService
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -58,7 +57,6 @@ async def assign_tutor_to_course(course_id: str, payload: AssignTutorPayload, db
 async def list_course_materials(course_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(require_admin)):
     result = await db.execute(select(Lesson).options(joinedload(Lesson.materials)).where(Lesson.module.has(course_id=course_id)))
     lessons = result.scalars().all()
-    storage = StorageService()
     return [
         CourseMaterialResponse(
             lesson_id=lesson.id,
@@ -69,7 +67,7 @@ async def list_course_materials(course_id: str, db: AsyncSession = Depends(get_d
                     title=material.title,
                     type=material.type,
                     s3_key=material.s3_key,
-                    url=storage.get_public_url(material.s3_key),
+                    url=f"/lesson-materials/{lesson.id}/{material.id}/download",
                     is_downloadable=material.is_downloadable,
                     size_bytes=material.size_bytes,
                     created_at=material.created_at,

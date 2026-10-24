@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.models.notification import Notification
+from app.models.user import Role, User
 
 
 class NotificationService:
@@ -29,3 +31,26 @@ class NotificationService:
             type="certificate",
             link="/dashboard/student/certificates",
         )
+
+    async def notify_admins(self, title: str, body: str, link: str = "/dashboard/admin/payments"):
+        admin_ids = (
+            await self.db.execute(
+                select(User.id)
+                .join(Role, User.role_id == Role.id)
+                .where(Role.name.in_(("admin", "super_admin")))
+            )
+        ).scalars().all()
+        notifications = [
+            Notification(
+                user_id=admin_id,
+                title=title,
+                body=body,
+                type="payment",
+                link=link,
+            )
+            for admin_id in admin_ids
+        ]
+        if notifications:
+            self.db.add_all(notifications)
+            await self.db.commit()
+        return notifications

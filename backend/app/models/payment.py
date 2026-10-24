@@ -22,3 +22,4 @@ class Payment(Base):
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     student: Mapped["User"] = relationship(foreign_keys=[student_id])
+    course: Mapped["Course"] = relationship(foreign_keys=[course_id])

@@ -1,17 +1,25 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import StatCard from "@/components/dashboard/StatCard";
-import { BookOpen, CheckCircle, Trophy, Award, ArrowRight } from "lucide-react";
+import { BookOpen, CheckCircle, Trophy, Award, ArrowRight, LockKeyhole } from "lucide-react";
 import { toast } from "react-hot-toast";
+import PaystackButton from "@/components/payments/PaystackButton";
 
 export default function StudentDashboard() {
   const qc = useQueryClient();
   const { user } = useAuthStore();
+  const [reportingCourseId, setReportingCourseId] = useState<string | null>(null);
+  const [paymentReference, setPaymentReference] = useState("");
+  const [paymentMessage, setPaymentMessage] = useState("");
   const { data: stats } = useQuery({ queryKey: ["student-stats"], queryFn: async () => (await api.get("/analytics/student/stats")).data });
   const { data: dashboard } = useQuery({ queryKey: ["student-dashboard"], queryFn: async () => (await api.get("/student/dashboard")).data });
+  const { data: paymentsData } = useQuery({
+    queryKey: ["student-payments"],
+    queryFn: async () => (await api.get("/payments/me")).data,
+  });
   const { data: profile } = useQuery({ queryKey: ["student-profile"], queryFn: async () => (await api.get("/student/profile")).data });
   const { data: certificates = [] } = useQuery({
     queryKey: ["student-certificates"],
@@ -27,7 +35,34 @@ export default function StudentDashboard() {
     onError: () => toast.error("Unable to request certificate")
   });
 
+  const reportPaymentMutation = useMutation({
+    mutationFn: async (courseId: string) =>
+      (await api.post("/payments/report", {
+        course_id: courseId,
+        reference: paymentReference.trim() || undefined,
+        message: paymentMessage.trim() || undefined,
+      })).data,
+    onSuccess: async (result) => {
+      toast.success(result.message);
+      setReportingCourseId(null);
+      setPaymentReference("");
+      setPaymentMessage("");
+      await qc.invalidateQueries({ queryKey: ["student-payments"] });
+      await qc.invalidateQueries({ queryKey: ["student-dashboard"] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.detail || "Unable to report payment"),
+  });
+
   const enrollments = useMemo(() => dashboard?.enrollments ?? [], [dashboard]);
+  const latestPaymentByCourse = useMemo(() => {
+    const paymentByCourse = new Map<string, any>();
+    for (const payment of paymentsData?.items ?? []) {
+      if (payment.course_id && !paymentByCourse.has(payment.course_id)) {
+        paymentByCourse.set(payment.course_id, payment);
+      }
+    }
+    return paymentByCourse;
+  }, [paymentsData]);
   const certificateCourseIds = useMemo(
     () => new Set(certificates.map((certificate: any) => certificate.course_id || certificate.course?.id)),
     [certificates],
@@ -40,7 +75,11 @@ export default function StudentDashboard() {
           <h1 className="text-2xl font-black text-slate-950 tracking-tight">Welcome back, {user?.first_name}!</h1>
           <p className="text-slate-500 text-sm mt-1">Here&apos;s your learning progress overview.</p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-sm font-bold text-white">{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+        {user?.avatar_url ? (
+          <img src={user.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-sm font-bold text-white">{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -82,35 +121,126 @@ export default function StudentDashboard() {
 
       <div>
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="font-bold text-slate-950 text-sm">Active Courses</h2>
+          <h2 className="font-bold text-slate-950 text-sm">My Courses & Applications</h2>
           <a href="/dashboard/student/courses" className="text-sm text-brand-600 hover:text-brand-500">View courses →</a>
         </div>
         <div className="space-y-3">
           {enrollments.map((e: any) => (
-            <div key={e.id} className="rounded-3xl border border-slate-200/70 bg-white p-5 flex items-center gap-4 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"><BookOpen size={20} className="text-brand-500"/></div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-950 text-sm truncate">{e.course?.title}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden"><div className="bg-brand-500 h-full rounded-full transition-all" style={{width:`${e.progress ?? 0}%`}}/></div>
-                  <span className="text-xs text-slate-500">{e.progress ?? 0}%</span>
+            <div key={e.id} className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                <div className="flex min-w-0 flex-1 gap-4">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100"><BookOpen size={20} className="text-brand-500"/></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-950">{e.course?.title || "Course"}</p>
+                    <p className="mt-1 text-sm text-slate-600">{e.course?.description || "Course description will be available soon."}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <span className={`rounded-full px-2.5 py-1 font-semibold ${
+                        ["active", "completed"].includes(e.status)
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-800"
+                      }`}>
+                        {["active", "completed"].includes(e.status) ? "Access granted" : "Awaiting payment"}
+                      </span>
+                      {e.status === "active" && (
+                        <span className="text-slate-500">Progress: {e.progress ?? 0}%</span>
+                      )}
+                      {e.status === "active" && (
+                        <div className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-slate-100">
+                          <div className="h-full rounded-full bg-brand-500" style={{ width: `${e.progress ?? 0}%` }}/>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="text-xs bg-brand-500 text-white border border-brand-500/20 px-3 py-2 rounded-xl transition-all hover:bg-brand-600">Continue</button>
-                {!certificateCourseIds.has(e.course_id || e.course?.id) && (
-                  <>
+                <div className="flex flex-wrap gap-2">
+                  {["active", "completed"].includes(e.status) ? (
+                    <a href="/dashboard/student/learning" className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600">Continue learning</a>
+                  ) : (
+                    <>
+                      <PaystackButton
+                        courseId={e.course_id || e.course?.id}
+                        amount={Number(e.course?.price || 0)}
+                        courseName={e.course?.title || "Course"}
+                        mode={e.mode || e.course?.mode || "online"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReportingCourseId(reportingCourseId === e.id ? null : e.id);
+                          setPaymentReference("");
+                          setPaymentMessage("");
+                        }}
+                        className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100"
+                      >
+                        I paid by transfer
+                      </button>
+                    </>
+                  )}
+                  {!certificateCourseIds.has(e.course_id || e.course?.id) && ["active", "completed"].includes(e.status) && (
                     <button
                       onClick={() => requestCertificateMutation.mutate(e.course_id || e.course?.id)}
                       disabled={requestCertificateMutation.isPending || !profile?.certificate_name}
-                      className="text-xs bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl transition-all hover:bg-slate-100 disabled:opacity-60"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                     >Request certificate</button>
-                    {!profile?.certificate_name && (
-                      <a href="/dashboard/student/profile" className="text-xs font-semibold text-brand-700 hover:underline">Add certificate name</a>
-                    )}
-                  </>
-                )}
+                  )}
+                </div>
               </div>
+              {e.status === "pending" && (() => {
+                const latestPayment = latestPaymentByCourse.get(e.course_id || e.course?.id);
+                return (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                      <LockKeyhole size={16} />
+                      {latestPayment?.status === "reported"
+                        ? "Payment report is waiting for admin approval"
+                        : latestPayment?.status === "rejected"
+                          ? "Payment report needs attention"
+                          : "Course materials and certificates are locked until payment is approved"}
+                    </p>
+                    {latestPayment?.review_message && (
+                      <p className="mt-2 text-sm text-amber-900">{latestPayment.review_message}</p>
+                    )}
+                    {reportingCourseId === e.id && (
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          reportPaymentMutation.mutate(e.course_id || e.course?.id);
+                        }}
+                        className="mt-4 grid gap-3 md:grid-cols-2"
+                      >
+                        <label className="text-xs font-medium text-slate-700">
+                          Payment reference (optional)
+                          <input
+                            value={paymentReference}
+                            onChange={(event) => setPaymentReference(event.target.value)}
+                            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                            placeholder="Bank transfer reference"
+                          />
+                        </label>
+                        <label className="text-xs font-medium text-slate-700">
+                          Message for the admin team (optional)
+                          <input
+                            value={paymentMessage}
+                            onChange={(event) => setPaymentMessage(event.target.value)}
+                            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                            placeholder="Payment date or transfer details"
+                          />
+                        </label>
+                        <div className="md:col-span-2">
+                          <button
+                            type="submit"
+                            disabled={reportPaymentMutation.isPending || latestPayment?.status === "reported"}
+                            className="rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+                          >
+                            {reportPaymentMutation.isPending ? "Sending report..." : "Send payment report"}
+                          </button>
+                          <p className="mt-2 text-xs text-amber-900">An admin will review your report before course access is unlocked.</p>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
           {!enrollments.length && <p className="text-slate-500 text-sm text-center py-8">No enrolled courses yet. <a href="/public/courses" className="text-brand-600 hover:underline">Browse courses →</a></p>}

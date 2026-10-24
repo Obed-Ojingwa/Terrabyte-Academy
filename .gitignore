@@ -15,6 +15,8 @@ backend/tests/
 backend/tests/*
 !backend/tests/test_exams.py
 !backend/tests/test_enrollment_workflow.py
+!backend/tests/test_course_payment_access.py
+!backend/tests/test_payment_workflow.py
 !backend/tests/test_user_avatar.py
 backend/verify_admin.py
 backend/seed_data.py

@@ -8,9 +8,11 @@ from sqlalchemy.orm import joinedload
 
 from app.api.deps import get_current_user
 from app.database import get_db
+from app.services.course_access_service import require_course_access
 from app.models.course import Lesson, Material
 from app.schemas.course import MaterialResponse, MaterialUpdate
 from app.services.storage_service import StorageService
+from fastapi.responses import Response
 
 router = APIRouter(prefix="/lesson-materials", tags=["Lesson Materials"])
 
@@ -65,7 +67,7 @@ async def upload_lesson_material(
         title=material.title,
         type=material.type,
         s3_key=material.s3_key,
-        url=storage.get_public_url(material.s3_key),
+        url=f"/lesson-materials/{material.lesson_id}/{material.id}/download",
         is_downloadable=material.is_downloadable,
         size_bytes=material.size_bytes,
         created_at=material.created_at,
@@ -99,7 +101,7 @@ async def update_lesson_material(
         title=material.title,
         type=material.type,
         s3_key=material.s3_key,
-        url=storage.get_public_url(material.s3_key),
+        url=f"/lesson-materials/{material.lesson_id}/{material.id}/download",
         is_downloadable=material.is_downloadable,
         size_bytes=material.size_bytes,
         created_at=material.created_at,
@@ -114,3 +116,38 @@ async def delete_lesson_material(lesson_id: str, material_id: str, current_user=
         raise HTTPException(status_code=404, detail="Material not found")
     await db.delete(material)
     await db.commit()
+
+
+@router.get("/{lesson_id}/{material_id}/download")
+async def download_lesson_material(
+    lesson_id: str,
+    material_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    lesson = (
+        await db.execute(
+            select(Lesson)
+            .where(Lesson.id == lesson_id)
+            .options(joinedload(Lesson.module).joinedload(Lesson.module.course))
+        )
+    ).scalar_one_or_none()
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    material = (
+        await db.execute(
+            select(Material).where(Material.id == material_id, Material.lesson_id == lesson.id)
+        )
+    ).scalar_one_or_none()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material not found")
+    await require_course_access(db, current_user, lesson.module.course_id)
+    try:
+        contents = StorageService().download_file(material.s3_key)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Course material is unavailable") from exc
+    return Response(
+        content=contents,
+        media_type=material.type or "application/octet-stream",
+        headers={"Content-Disposition": "inline"},
+    )

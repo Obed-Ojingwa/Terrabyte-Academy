@@ -10,6 +10,7 @@ from app.models.user import User
 from app.schemas.lms import CertificateResponse, CertificateVerificationResponse
 from app.tasks.certificate_tasks import generate_and_upload_certificate
 from app.services.storage_service import StorageService
+from app.services.course_access_service import student_has_course_access
 from datetime import datetime
 
 router = APIRouter(prefix="/certificates", tags=["Certificates"])
@@ -42,6 +43,8 @@ async def verify_certificate(cert_number: str, db: AsyncSession = Depends(get_db
     cert = result.scalar_one_or_none()
     if not cert or not cert.s3_key or not cert.issued_at:
         raise HTTPException(status_code=404, detail="Certificate not found or invalid")
+    if not await student_has_course_access(db, cert.student_id, cert.course_id):
+        raise HTTPException(status_code=404, detail="Certificate not found or invalid")
     recipient_name = cert.recipient_name or cert.student.certificate_name or f"{cert.student.first_name} {cert.student.last_name}"
     return CertificateVerificationResponse(
         certificate_number=cert.certificate_number,
@@ -53,20 +56,22 @@ async def verify_certificate(cert_number: str, db: AsyncSession = Depends(get_db
 
 @router.post("/request")
 async def request_certificate(course_id: str, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role.name != "student":
+        raise HTTPException(status_code=403, detail="Only students can request certificates")
     if not current_user.certificate_name:
         raise HTTPException(status_code=400, detail="Add your preferred certificate name to your profile before requesting a certificate")
-    existing = (await db.execute(select(Certificate).where(Certificate.student_id == current_user.id, Certificate.course_id == course_id))).scalar_one_or_none()
-    if existing:
-        return {"message": "Certificate request already exists", "certificate_number": existing.certificate_number}
-
     enrollment = (
         await db.execute(
             select(Enrollment)
             .where(Enrollment.student_id == current_user.id, Enrollment.course_id == course_id)
         )
     ).scalar_one_or_none()
-    if not enrollment:
-        raise HTTPException(status_code=400, detail="You must be enrolled in the course to request a certificate")
+    if not enrollment or enrollment.status not in {"active", "completed"}:
+        raise HTTPException(status_code=403, detail="Course payment must be approved before requesting a certificate")
+
+    existing = (await db.execute(select(Certificate).where(Certificate.student_id == current_user.id, Certificate.course_id == course_id))).scalar_one_or_none()
+    if existing:
+        return {"message": "Certificate request already exists", "certificate_number": existing.certificate_number}
 
     import uuid as _uuid
     cert_number = f"TBA-{_uuid.uuid4().hex[:10].upper()}"
@@ -82,6 +87,8 @@ async def approve_certificate(cert_id: str, current_user=Depends(require_admin),
     cert = result.scalar_one_or_none()
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
+    if not await student_has_course_access(db, cert.student_id, cert.course_id):
+        raise HTTPException(status_code=409, detail="Course payment must be approved before issuing a certificate")
     if cert.status == "issued" and cert.s3_key:
         return {"message": "Certificate is already issued", "certificate_number": cert.certificate_number}
     if cert.status == "generating":
@@ -110,6 +117,8 @@ async def download_certificate(cert_id: str, current_user=Depends(get_current_us
         raise HTTPException(status_code=404, detail="Certificate not found")
     is_admin = current_user.role.name in {"admin", "super_admin"}
     if not is_admin and cert.student_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Certificate not found")
+    if not is_admin and not await student_has_course_access(db, cert.student_id, cert.course_id):
         raise HTTPException(status_code=404, detail="Certificate not found")
     if cert.status != "issued" or not cert.s3_key:
         raise HTTPException(status_code=409, detail="Certificate PDF is not ready")

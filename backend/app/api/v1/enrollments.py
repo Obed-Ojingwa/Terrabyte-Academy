@@ -47,6 +47,11 @@ async def _attach_course_context(enrollment: Enrollment, current_user, db: Async
     progress_count = sum(1 for row in progress_rows if row.is_completed)
     total_lessons = len(lesson_ids)
     enrollment.progress = int((progress_count / total_lessons) * 100) if total_lessons else 0
+    if current_user.role.name == "student" and enrollment.status not in {"active", "completed"}:
+        for module in course.modules:
+            for lesson in module.lessons:
+                lesson.content = None
+                lesson.materials = []
     enrollment.course = course
     return enrollment
 
@@ -104,9 +109,6 @@ async def create_enrollment(payload: EnrollmentCreate, current_user=Depends(get_
     if not course or not course.is_published:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    if float(course.price or 0) > 0:
-        raise HTTPException(status_code=409, detail="Paid courses must be enrolled through the payment workflow")
-
     existing_enrollment = (
         await db.execute(
             select(Enrollment).where(
@@ -117,13 +119,16 @@ async def create_enrollment(payload: EnrollmentCreate, current_user=Depends(get_
         )
     ).scalar_one_or_none()
     if existing_enrollment:
-        raise HTTPException(status_code=409, detail="You are already enrolled in this course")
+        raise HTTPException(
+            status_code=409,
+            detail="You already applied for this course" if existing_enrollment.status == "pending" else "You are already enrolled in this course",
+        )
 
     enrollment = Enrollment(
         student_id=current_user.id,
         course_id=course.id,
         mode=payload.mode,
-        status="active",
+        status="pending" if float(course.price or 0) > 0 else "active",
     )
     db.add(enrollment)
     await db.commit()
@@ -159,6 +164,8 @@ async def upsert_lesson_progress(
         raise HTTPException(status_code=404, detail="Enrollment not found")
     if enrollment.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    if enrollment.status not in {"active", "completed"}:
+        raise HTTPException(status_code=403, detail="Course access is locked until payment is approved")
 
     progress = (
         await db.execute(select(LessonProgress).where(LessonProgress.student_id == current_user.id, LessonProgress.lesson_id == lesson_id))

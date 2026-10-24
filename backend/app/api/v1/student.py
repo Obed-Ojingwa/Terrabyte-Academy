@@ -52,6 +52,11 @@ async def get_student_dashboard(current_user=Depends(get_current_user), db: Asyn
     # attach progress to enrollments
     for enrollment in enrollments:
         course = enrollment.course
+        if course and enrollment.status not in {"active", "completed"}:
+            for module in course.modules:
+                for lesson in module.lessons:
+                    lesson.content = None
+                    lesson.materials = []
         lesson_ids = [lesson.id for module in course.modules for lesson in module.lessons] if course and getattr(course, "modules", None) else []
         progress_rows = []
         if lesson_ids:
@@ -64,7 +69,11 @@ async def get_student_dashboard(current_user=Depends(get_current_user), db: Asyn
 
     # upcoming events for student's courses (next 30 days)
     now = datetime.utcnow()
-    course_ids = [e.course_id for e in enrollments if e.course_id]
+    course_ids = [
+        enrollment.course_id
+        for enrollment in enrollments
+        if enrollment.course_id and enrollment.status in {"active", "completed"}
+    ]
     event_q = select(Event).where(Event.start_date >= now).order_by(Event.start_date.asc())
     if course_ids:
         event_q = event_q.where((Event.course_id.in_(course_ids)) | (Event.course_id == None))
@@ -143,6 +152,7 @@ async def get_student_profile(current_user=Depends(get_current_user), db: AsyncS
             joinedload(Enrollment.course)
             .joinedload(Course.modules)
             .joinedload(Module.lessons)
+            .joinedload(Lesson.materials)
         )
         .where(Enrollment.student_id == user.id)
     )
@@ -166,6 +176,11 @@ async def get_student_profile(current_user=Depends(get_current_user), db: AsyncS
 
     for enrollment in enrollments:
         if enrollment.course:
+            if enrollment.status not in {"active", "completed"}:
+                for module in enrollment.course.modules:
+                    for lesson in module.lessons:
+                        lesson.content = None
+                        lesson.materials = []
             # Collect all lesson IDs for this course
             lesson_ids = []
             for module in enrollment.course.modules:

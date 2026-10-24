@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { downloadProtectedFile } from "@/lib/download";
 import { BookOpen, ClipboardList, Trophy, CheckCircle2, Clock3 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -30,7 +31,10 @@ export default function StudentLearningPage() {
     return (assignmentsData ?? []).filter((assignment: any) => !courseId || assignment.course_id === courseId || assignment.course?.id === courseId);
   }, [assignmentsData, enrollments, selectedEnrollment]);
   const selectedCourse = enrollments.find((enrollment: any) => enrollment.id === selectedEnrollment) ?? enrollments[0];
-  const courseModules = useMemo(() => selectedCourse?.course?.modules ?? [], [selectedCourse]);
+  const courseModules = useMemo(
+    () => ["active", "completed"].includes(selectedCourse?.status) ? selectedCourse?.course?.modules ?? [] : [],
+    [selectedCourse],
+  );
   const lessonProgress = useMemo(() => {
     const lessons = courseModules.flatMap((module: any) => (module.lessons ?? []).map((lesson: any) => lesson));
     const completed = lessons.filter((lesson: any) => lesson.is_completed).length;
@@ -66,7 +70,9 @@ export default function StudentLearningPage() {
             {enrollments.map((enrollment: any) => (
               <button key={enrollment.id} onClick={() => { setSelectedEnrollment(enrollment.id); setSelectedLesson(null); }} className={`w-full rounded-2xl border px-3 py-4 text-left ${selectedCourse?.id === enrollment.id ? "border-brand-500 bg-brand-500/10" : "border-slate-200 bg-slate-50"}`}>
                 <div className="font-semibold text-slate-950">{enrollment.course?.title ?? "Course"}</div>
-                <div className="mt-1 text-xs text-slate-500">Status: {enrollment.status}</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {["active", "completed"].includes(enrollment.status) ? "Access granted" : "Payment required"}
+                </div>
               </button>
             ))}
           </div>
@@ -93,7 +99,17 @@ export default function StudentLearningPage() {
 
       <div className="page-surface rounded-3xl p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2"><CheckCircle2 size={18} className="text-brand-400" /><h2 className="text-lg font-semibold text-slate-950">Lesson progress</h2></div>
-        {selectedCourse ? (
+        {selectedCourse?.status === "pending" ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <h3 className="font-semibold text-amber-950">{selectedCourse.course?.title ?? "Course"} is locked</h3>
+            <p className="mt-2 text-sm text-amber-900">
+              Lessons, videos, audio, PDFs, and other course materials will be available after your payment is approved.
+            </p>
+            <Link href="/dashboard/student" className="mt-4 inline-flex rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+              Go to dashboard payment options
+            </Link>
+          </div>
+        ) : selectedCourse ? (
           <div className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-4">
@@ -149,13 +165,24 @@ export default function StudentLearningPage() {
                         </div>
                         <div className="space-y-2">
                           {selectedLessonData.materials.map((material: any) => (
-                            <a key={material.id} href={material.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                            <button
+                              key={material.id}
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await downloadProtectedFile(material.url, material.title);
+                                } catch {
+                                  toast.error("Unable to download course material");
+                                }
+                              }}
+                              className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            >
                               <div>
                                 <div className="font-semibold text-slate-950">{material.title}</div>
                                 <div className="mt-1 text-xs text-slate-500">{material.type} • {material.size_bytes ? `${Math.round(material.size_bytes / 1024)} KB` : "Size unknown"}</div>
                               </div>
-                              <span className="text-brand-600">View</span>
-                            </a>
+                              <span className="text-brand-600">Download</span>
+                            </button>
                           ))}
                         </div>
                       </div>

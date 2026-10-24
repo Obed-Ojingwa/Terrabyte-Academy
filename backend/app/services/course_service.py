@@ -16,6 +16,14 @@ def slugify(text: str) -> str:
     return re.sub(r"[\s_-]+", "-", text)
 
 
+def _course_catalog_response(course: Course) -> CourseResponse:
+    response = CourseResponse.model_validate(course)
+    for module in response.modules or []:
+        for lesson in module.lessons:
+            lesson.materials = []
+    return response
+
+
 class CourseService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -81,7 +89,7 @@ class CourseService:
         paged_query = base_query.offset((page - 1) * page_size).limit(page_size)
         courses = (await self.db.execute(paged_query)).scalars().all()
         response = CourseListResponse(
-            items=[CourseResponse.model_validate(c) for c in courses],
+            items=[_course_catalog_response(c) for c in courses],
             total=total,
             page=page,
             page_size=page_size,
@@ -169,7 +177,7 @@ class CourseService:
         course = result.scalar_one_or_none()
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
-        return CourseResponse.model_validate(course)
+        return _course_catalog_response(course)
 
     async def create_course(self, payload: CourseCreate, user) -> CourseResponse:
         slug = slugify(payload.title)

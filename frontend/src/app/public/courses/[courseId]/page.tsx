@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { ArrowLeft, BookOpen, Clock3, Layers, MapPin, User } from "lucide-react";
 import PublicHeader from "@/components/ui/PublicHeader";
-import PaystackButton from "@/components/payments/PaystackButton";
 import { useCourse } from "@/hooks/useCourses";
 import api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -28,6 +27,11 @@ export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["my-enrollments"],
+    queryFn: async () => (await api.get("/enrollments")).data,
+    enabled: user?.role.name === "student",
+  });
   const rawCourseId = Array.isArray(params?.courseId) ? params.courseId[0] : params?.courseId;
   const courseId = typeof rawCourseId === "string" ? rawCourseId : "";
   const { data: course, isLoading, isError } = useCourse(courseId);
@@ -35,8 +39,10 @@ export default function CourseDetailPage() {
   const enrollMutation = useMutation({
     mutationFn: async () => api.post("/enrollments", { course_id: courseId, mode: course?.mode || "online" }),
     onSuccess: () => {
-      toast.success("You are now enrolled in this course.");
-      router.push("/dashboard/student/courses");
+      toast.success(freeCourse
+        ? "You are now enrolled in this course."
+        : "Course application added to your dashboard. Complete payment to unlock materials.");
+      router.push("/dashboard/student");
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.detail || "Enrollment failed. Please try again.");
@@ -44,6 +50,10 @@ export default function CourseDetailPage() {
   });
 
   const freeCourse = course?.price === 0;
+  const alreadyApplied = enrollments.some(
+    (enrollment: { course_id?: string; course?: { id?: string } }) =>
+      (enrollment.course_id || enrollment.course?.id) === courseId,
+  );
 
   return (
     <div className="page-light min-h-screen pt-20 text-slate-950">
@@ -179,17 +189,26 @@ export default function CourseDetailPage() {
                     >
                       Sign in as a student to apply
                     </Link>
-                  ) : freeCourse ? (
+                  ) : alreadyApplied ? (
+                    <Link
+                      href="/dashboard/student"
+                      className="block w-full rounded-2xl border border-brand-200 bg-brand-50 py-4 text-center font-bold text-brand-700 transition-all hover:bg-brand-100"
+                    >
+                      View this course on your dashboard
+                    </Link>
+                  ) : (
                     <button
                       type="button"
                       onClick={() => enrollMutation.mutate()}
                       disabled={enrollMutation.isPending}
                       className="w-full rounded-2xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-4 transition-all"
                     >
-                      {enrollMutation.isPending ? "Applying..." : "Apply for free"}
+                      {enrollMutation.isPending
+                        ? "Applying..."
+                        : freeCourse
+                          ? "Apply for free"
+                          : "Apply to course"}
                     </button>
-                  ) : (
-                    <PaystackButton courseId={course.id} amount={course.price} courseName={course.title} mode={course.mode} />
                   )}
                 </div>
               </div>

@@ -27,9 +27,15 @@ export default function StudentCertificatesPage() {
     () =>
       (enrollments ?? []).filter((enrollment: any) => {
         const courseId = enrollment.course_id || enrollment.course?.id;
-        return courseId && !requestedCourseIds.has(courseId);
+        return courseId
+          && ["active", "completed"].includes(enrollment.status)
+          && !requestedCourseIds.has(courseId);
       }),
     [enrollments, requestedCourseIds],
+  );
+  const lockedEnrollments = useMemo(
+    () => (enrollments ?? []).filter((enrollment: any) => enrollment.status === "pending"),
+    [enrollments],
   );
 
   const requestCertificateMutation = useMutation({
@@ -96,6 +102,17 @@ export default function StudentCertificatesPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {lockedEnrollments.length > 0 && (
+        <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-5">
+          <h2 className="font-semibold text-amber-950">Certificates locked until payment approval</h2>
+          <ul className="mt-3 space-y-2 text-sm text-amber-900">
+            {lockedEnrollments.map((enrollment: any) => (
+              <li key={enrollment.id}>{enrollment.course?.title ?? "Course"} — complete payment from your <Link className="font-semibold underline" href="/dashboard/student">dashboard</Link>.</li>
+            ))}
+          </ul>
         </div>
       )}
 

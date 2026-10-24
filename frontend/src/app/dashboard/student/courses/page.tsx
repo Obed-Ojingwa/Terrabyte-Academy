@@ -6,8 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { toast } from "react-hot-toast";
 import api from "@/lib/api";
-import { BookOpen, Layers, PlayCircle, Clock3, Search, Sliders, TrendingUp } from "lucide-react";
-import PaystackButton from "@/components/payments/PaystackButton";
+import { BookOpen, Layers, PlayCircle, Clock3, Search, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export default function StudentCoursesPage() {
@@ -52,9 +51,12 @@ export default function StudentCoursesPage() {
   const enrollMutation = useMutation({
     mutationFn: async (course: any) =>
       (await api.post("/enrollments", { course_id: course.id, mode: course.mode || "online" })).data,
-    onSuccess: async () => {
+    onSuccess: async (enrollment) => {
       await queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
-      toast.success("You are now enrolled in this course.");
+      await queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
+      toast.success(enrollment.status === "active"
+        ? "You are now enrolled in this course."
+        : "Course application added to your dashboard. Complete payment to unlock materials.");
     },
     onError: (error) => {
       const detail = error instanceof AxiosError
@@ -75,6 +77,15 @@ export default function StudentCoursesPage() {
   const enrolledCourseIds = useMemo(
     () => new Set(enrollments.map((e: any) => e.course_id || e.course?.id)),
     [enrollments]
+  );
+  const enrollmentByCourseId = useMemo(
+    () => new Map<string, { status?: string }>(
+      enrollments.map((enrollment: any): [string, { status?: string }] => [
+        enrollment.course_id || enrollment.course?.id,
+        enrollment,
+      ]),
+    ),
+    [enrollments],
   );
 
   const filteredCourses = useMemo(() => {
@@ -177,7 +188,11 @@ export default function StudentCoursesPage() {
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-brand-50 text-brand-700"
                       }`}>
-                        {enrolledCourseIds.has(course.id) ? "Enrolled" : "Open"}
+                        {enrollmentByCourseId.get(course.id)?.status === "pending"
+                          ? "Applied"
+                          : enrolledCourseIds.has(course.id)
+                            ? "Enrolled"
+                            : "Open"}
                       </span>
                     </div>
                     <p className="text-sm text-slate-600 line-clamp-2">
@@ -193,8 +208,10 @@ export default function StudentCoursesPage() {
                         disabled={enrolledCourseIds.has(course.id)}
                         className="rounded-full border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                       >
-                        {enrolledCourseIds.has(course.id)
-                          ? "Enrolled"
+                        {enrollmentByCourseId.get(course.id)?.status === "pending"
+                          ? "Applied"
+                          : enrolledCourseIds.has(course.id)
+                            ? "Enrolled"
                           : "View & enroll"}
                       </button>
                     </div>
@@ -248,7 +265,11 @@ export default function StudentCoursesPage() {
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-brand-50 text-brand-700"
                         }`}>
-                          {isEnrolled ? "Enrolled" : "Open"}
+                          {enrollmentByCourseId.get(course.id)?.status === "pending"
+                            ? "Applied"
+                            : isEnrolled
+                              ? "Enrolled"
+                              : "Open"}
                         </span>
                       </div>
                       <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
@@ -354,17 +375,21 @@ export default function StudentCoursesPage() {
                   <div>
                     <p className="font-semibold text-slate-950">
                       {enrolledCourseIds.has(selectedCourse.id)
-                        ? "You are enrolled in this course"
+                        ? enrollmentByCourseId.get(selectedCourse.id)?.status === "pending"
+                          ? "Your course application is on the dashboard"
+                          : "You are enrolled in this course"
                         : selectedCourse.price === 0
                           ? "Apply for this free course"
                           : `Apply for ${formatCurrency(selectedCourse.price)}`}
                     </p>
                     <p className="mt-1 text-xs text-slate-600">
                       {enrolledCourseIds.has(selectedCourse.id)
-                        ? "Open your course from My Courses to continue learning."
+                        ? enrollmentByCourseId.get(selectedCourse.id)?.status === "pending"
+                          ? "Complete payment from your dashboard to unlock the course materials."
+                          : "Open your course from My Courses to continue learning."
                         : selectedCourse.price === 0
                           ? "Your enrollment will be activated immediately."
-                          : "Continue to secure payment to complete your application."}
+                          : "Apply now to add this course to your dashboard, then pay from your dashboard to unlock materials."}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -379,12 +404,14 @@ export default function StudentCoursesPage() {
                           {enrollMutation.isPending ? "Applying..." : "Apply now"}
                         </button>
                       ) : (
-                        <PaystackButton
-                          courseId={selectedCourse.id}
-                          amount={selectedCourse.price}
-                          courseName={selectedCourse.title}
-                          mode={selectedCourse.mode || "online"}
-                        />
+                        <button
+                          type="button"
+                          onClick={() => enrollMutation.mutate(selectedCourse)}
+                          disabled={enrollMutation.isPending}
+                          className="rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {enrollMutation.isPending ? "Applying..." : "Apply now"}
+                        </button>
                       ))}
                     <button
                       type="button"

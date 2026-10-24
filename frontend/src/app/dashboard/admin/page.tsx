@@ -1,9 +1,11 @@
 "use client";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import StatCard from "@/components/dashboard/StatCard";
 import { Users, BookOpen, CreditCard, Award } from "lucide-react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { useMarkRead, useNotifications } from "@/hooks/useNotifications";
 
 const revenueData = [
   {month:"Nov",value:820000},{month:"Dec",value:1200000},{month:"Jan",value:1650000},
@@ -11,9 +13,12 @@ const revenueData = [
 ];
 
 export default function AdminDashboard() {
+  const { data: notifications = [] } = useNotifications();
+  const markRead = useMarkRead();
   const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: async () => (await api.get("/analytics/admin")).data });
   const revenueSeries = stats?.revenue_series ?? [];
   const activityItems = stats?.recent_activity ?? [];
+  const paymentNotifications = notifications.filter((notification: any) => notification.type === "payment" && !notification.is_read);
   return (
     <div className="p-6 space-y-6 page-light min-h-full text-slate-950">
       <div className="flex items-center justify-between">
@@ -26,6 +31,39 @@ export default function AdminDashboard() {
         <StatCard label="Revenue" value={`₦${((stats?.total_revenue ?? 0)/1000000).toFixed(1)}M`} icon={<CreditCard size={16}/>} color="yellow" change={18}/>
         <StatCard label="Certs Issued" value={stats?.certificates_issued ?? 0} icon={<Award size={16}/>} color="purple" change={9}/>
       </div>
+      {paymentNotifications.length > 0 && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-bold text-amber-950">Payment updates</h2>
+              <p className="mt-1 text-sm text-amber-900">
+                {paymentNotifications.length} new student payment {paymentNotifications.length === 1 ? "update" : "updates"}.
+              </p>
+            </div>
+            <Link href="/dashboard/admin/payments" className="rounded-xl bg-amber-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-900">
+              Review payments
+            </Link>
+          </div>
+          <div className="mt-4 space-y-2">
+            {paymentNotifications.slice(0, 3).map((notification: any) => (
+              <div key={notification.id} className="flex items-start justify-between gap-3 rounded-xl bg-white/80 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">{notification.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">{notification.body}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => markRead.mutate(notification.id)}
+                  disabled={markRead.isPending}
+                  className="shrink-0 text-xs font-semibold text-brand-700 hover:underline"
+                >
+                  Mark read
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="page-surface rounded-2xl p-6">
           <h2 className="font-bold text-slate-950 text-sm mb-4">Live operations</h2>

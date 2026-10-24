@@ -66,6 +66,4 @@ class Material(Base):
 
     @property
     def url(self) -> str:
-        from app.services.storage_service import StorageService
-
-        return StorageService().get_public_url(self.s3_key)
+        return f"/lesson-materials/{self.lesson_id}/{self.id}/download"

@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { BookOpen, Layers, PlayCircle, Plus, Pencil, Trash2, DownloadCloud } from "lucide-react";
 import MediaUploader from "@/components/uploads/MediaUploader";
+import { downloadProtectedFile } from "@/lib/download";
 
 export default function TutorCoursesPage() {
   const queryClient = useQueryClient();
@@ -166,10 +167,20 @@ export default function TutorCoursesPage() {
                                 {lesson.materials.map((material: any) => (
                                   <div key={material.id} className="space-y-2">
                                     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                                      <a href={material.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-brand-600 hover:text-brand-800">
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          try {
+                                            await downloadProtectedFile(material.url, material.title);
+                                          } catch {
+                                            toast.error("Unable to download course material");
+                                          }
+                                        }}
+                                        className="flex items-center gap-2 text-brand-600 hover:text-brand-800"
+                                      >
                                         <DownloadCloud size={14} />
                                         <span>{material.title}</span>
-                                      </a>
+                                      </button>
                                       <div className="flex items-center gap-2">
                                         <button
                                           onClick={() => {

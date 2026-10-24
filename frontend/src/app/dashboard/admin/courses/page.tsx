@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { Plus, Pencil, Trash2, BookOpen, FileText, Users } from "lucide-react";
 import MediaUploader from "@/components/uploads/MediaUploader";
 import { CourseMaterialResponse, StudentCourseProgress } from "@/types/course";
+import { downloadProtectedFile } from "@/lib/download";
 
 type AdminCourse = {
   id: string;
@@ -329,9 +330,19 @@ export default function AdminCoursesPage() {
                                 <div className="font-medium text-slate-950">{material.title}</div>
                                 <div className="text-xs text-slate-500">{material.type} • {material.size_bytes ? `${(material.size_bytes / 1024).toFixed(1)} KB` : "Unknown size"}</div>
                               </div>
-                              <a href={material.url} target="_blank" rel="noreferrer" className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await downloadProtectedFile(material.url, material.title);
+                                  } catch {
+                                    toast.error("Unable to download course material");
+                                  }
+                                }}
+                                className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white"
+                              >
                                 Download
-                              </a>
+                              </button>
                             </div>
                           ))}
                         </div>
