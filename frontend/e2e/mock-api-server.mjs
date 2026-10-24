@@ -15,15 +15,31 @@ const student = {
   email: "student@example.test",
   first_name: "Test",
   last_name: "Student",
+  certificate_name: "Test Student",
   is_active: true,
   role: { name: "student" },
+};
+const admin = {
+  id: "55555555-5555-4555-8555-555555555555",
+  email: "admin@example.test",
+  first_name: "Test",
+  last_name: "Admin",
+  is_active: true,
+  role: { name: "admin" },
 };
 const course = {
   id: "33333333-3333-4333-8333-333333333333",
   title: "Exam E2E Course",
   tutor_id: tutor.id,
 };
-const state = { activeRole: "tutor", exams: [], questions: new Map(), attempts: new Map() };
+const enrollment = {
+  id: "66666666-6666-4666-8666-666666666666",
+  course_id: course.id,
+  course,
+  status: "active",
+  progress: 25,
+};
+const state = { activeRole: "tutor", exams: [], questions: new Map(), attempts: new Map(), certificates: [] };
 let nextQuestion = 0;
 let nextAttempt = 0;
 
@@ -56,24 +72,94 @@ const server = createServer(async (request, response) => {
     ? tutor
     : token === "e2e-student-token"
       ? student
+      : token === "e2e-admin-token"
+        ? admin
       : state.activeRole === "tutor" ? tutor : student;
   const respond = (status, payload) => send(response, status, payload, origin);
 
   if (path === "/health") return respond(200, { status: "ok" });
   if (path === "/auth/login" && request.method === "POST") {
-    const user = body.email === tutor.email ? tutor : body.email === student.email ? student : null;
+    const user = body.email === tutor.email ? tutor
+      : body.email === student.email ? student
+        : body.email === admin.email ? admin : null;
     if (!user) return respond(401, { detail: "Invalid test user" });
     state.activeRole = user.role.name;
-    const roleToken = user.role.name === "tutor" ? "e2e-tutor-token" : "e2e-student-token";
+    const roleToken = user.role.name === "tutor" ? "e2e-tutor-token"
+      : user.role.name === "admin" ? "e2e-admin-token" : "e2e-student-token";
     return respond(200, { access_token: roleToken, refresh_token: `refresh-${roleToken}`, token_type: "bearer", user });
   }
   if (path === "/auth/refresh" && request.method === "POST") {
-    const roleToken = body.refresh_token === "refresh-e2e-tutor-token" ? "e2e-tutor-token" : "e2e-student-token";
+    const roleToken = body.refresh_token === "refresh-e2e-tutor-token" ? "e2e-tutor-token"
+      : body.refresh_token === "refresh-e2e-admin-token" ? "e2e-admin-token" : "e2e-student-token";
     return respond(200, { access_token: roleToken, refresh_token: `refresh-${roleToken}`, token_type: "bearer" });
   }
   if (!currentUser) return respond(401, { detail: "Authentication required" });
   if (path === "/users/me" && request.method === "GET") return respond(200, currentUser);
+  if (path === "/student/profile" && request.method === "GET") return respond(200, currentUser);
+  if (path === "/enrollments/" && request.method === "GET") return respond(200, currentUser.role.name === "student" ? [enrollment] : []);
+  if (path === "/analytics/student/stats" && request.method === "GET") {
+    return respond(200, { enrolled: 1, completed: 0, assignments: 0, certificates: state.certificates.length, completion_rate: enrollment.progress, next_up: [] });
+  }
+  if (path === "/analytics/admin" && request.method === "GET") return respond(200, {});
+  if (path === "/student/dashboard" && request.method === "GET") {
+    return respond(200, { enrollments: currentUser.role.name === "student" ? [enrollment] : [] });
+  }
   if (path === "/courses/me" && request.method === "GET") return respond(200, currentUser.role.name === "tutor" ? [course] : []);
+
+  if (path === "/certificates/me" && request.method === "GET") {
+    return respond(200, state.certificates.filter((certificate) => certificate.student_id === currentUser.id));
+  }
+  if (path === "/certificates/" && request.method === "GET" && currentUser.role.name === "admin") {
+    return respond(200, state.certificates.map((certificate) => ({
+      ...certificate,
+      student,
+      course,
+    })));
+  }
+  if (path === "/certificates/request" && request.method === "POST" && currentUser.role.name === "student") {
+    const courseId = url.searchParams.get("course_id");
+    if (courseId !== course.id) return respond(400, { detail: "You must be enrolled in the course to request a certificate" });
+    let certificate = state.certificates.find((item) => item.student_id === currentUser.id && item.course_id === courseId);
+    if (!certificate) {
+      certificate = {
+        id: "77777777-7777-4777-8777-777777777777",
+        student_id: currentUser.id,
+        course_id: courseId,
+        certificate_number: "TBA-E2E123456",
+        recipient_name: currentUser.certificate_name,
+        status: "pending",
+        pdf_available: false,
+        requested_at: new Date().toISOString(),
+        issued_at: null,
+      };
+      state.certificates.push(certificate);
+    }
+    return respond(200, { message: "Certificate request submitted", certificate_number: certificate.certificate_number });
+  }
+  const approveCertificateMatch = path.match(/^\/certificates\/([^/]+)\/approve$/);
+  if (approveCertificateMatch && request.method === "PUT" && currentUser.role.name === "admin") {
+    const certificate = state.certificates.find((item) => item.id === approveCertificateMatch[1]);
+    if (!certificate) return respond(404, { detail: "Certificate not found" });
+    certificate.status = "issued";
+    certificate.pdf_available = true;
+    certificate.issued_at = new Date().toISOString();
+    return respond(200, { message: "Certificate approved", certificate_number: certificate.certificate_number, status: "issued" });
+  }
+  const downloadCertificateMatch = path.match(/^\/certificates\/([^/]+)\/download$/);
+  if (downloadCertificateMatch && request.method === "GET") {
+    const certificate = state.certificates.find((item) => item.id === downloadCertificateMatch[1]);
+    if (!certificate || certificate.student_id !== currentUser.id || certificate.status !== "issued") {
+      return respond(404, { detail: "Certificate not found" });
+    }
+    response.writeHead(200, {
+      "access-control-allow-origin": origin ?? "http://127.0.0.1:3010",
+      "access-control-allow-credentials": "true",
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="${certificate.certificate_number}.pdf"`,
+      vary: "Origin",
+    });
+    return response.end("%PDF-E2E");
+  }
 
   if (path === "/exams" && request.method === "GET") {
     const visible = currentUser.role.name === "student"
@@ -211,7 +297,7 @@ const server = createServer(async (request, response) => {
 });
 
 function examScore(examId) {
-  return state.exams.find((exam) => exam.id === examId)?.pass_score ?? 70;
+  return state.exams.find((exam) => exam.id === examId)?.pass_score ?? 40;
 }
 
 server.listen(port, host, () => console.log(`Exam E2E mock API listening on http://${host}:${port}`));

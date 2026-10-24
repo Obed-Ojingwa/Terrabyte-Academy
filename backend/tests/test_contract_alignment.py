@@ -1,3 +1,5 @@
+import pytest
+
 from app.schemas.auth import TokenResponse, UserResponse
 from app.schemas.course import CourseResponse, CourseTutorSummary, CourseModuleSummary, CourseLessonSummary
 from app.schemas.lms import AssignmentCreate, AssignmentResponse, CertificateResponse, EnrollmentCreate, EnrollmentResponse, ExamCreate, ExamResponse, NotificationResponse, SubmissionResponse
@@ -78,7 +80,7 @@ class DummyExam:
         self.course_id = "22222222-2222-2222-2222-222222222222"
         self.title = "Python Basics Quiz"
         self.duration_min = 45
-        self.pass_score = 70.0
+        self.pass_score = 40.0
         self.created_at = "2024-01-06T00:00:00"
         self.questions = []
         self.results = []
@@ -198,9 +200,20 @@ def test_lms_exam_certificate_and_notification_contracts_validate():
 
 def test_lms_create_payloads_accept_expected_fields():
     assignment = AssignmentCreate(course_id="22222222-2222-2222-2222-222222222222", title="Week 1 task", due_date="2024-02-01T00:00:00", max_score=100)
-    exam = ExamCreate(course_id="22222222-2222-2222-2222-222222222222", title="Midterm", duration_min=60, pass_score=70.0)
+    exam = ExamCreate(course_id="22222222-2222-2222-2222-222222222222", title="Midterm", duration_min=60, pass_score=40.0)
     enrollment = EnrollmentCreate(course_id="22222222-2222-2222-2222-222222222222", mode="online")
 
     assert assignment.title == "Week 1 task"
-    assert exam.pass_score == 70.0
+    assert exam.pass_score == 40.0
     assert enrollment.mode == "online"
+
+
+def test_exam_pass_score_is_fixed_at_40_percent():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="fixed at 40%"):
+        ExamCreate(
+            course_id="22222222-2222-2222-2222-222222222222",
+            title="Midterm",
+            pass_score=70,
+        )

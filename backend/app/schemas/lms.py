@@ -306,7 +306,7 @@ class ExamCreate(BaseModel):
     course_id: UUID
     title: str = Field(min_length=1, max_length=255)
     duration_min: int = Field(default=60, ge=1, le=1440)
-    pass_score: float = Field(default=70.0, ge=0, le=100)
+    pass_score: float = Field(default=40.0, ge=0, le=100)
     available_from: datetime | None = None
     available_until: datetime | None = None
     max_attempts: int = Field(default=1, ge=1, le=10)
@@ -320,6 +320,8 @@ class ExamCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_availability_window(self):
+        if self.pass_score != 40:
+            raise ValueError("The exam pass score is fixed at 40%")
         if self.available_from and self.available_until and self.available_from >= self.available_until:
             raise ValueError("available_until must be later than available_from")
         return self
@@ -342,6 +344,8 @@ class ExamUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_availability_window(self):
+        if self.pass_score is not None and self.pass_score != 40:
+            raise ValueError("The exam pass score is fixed at 40%")
         if self.available_from and self.available_until and self.available_from >= self.available_until:
             raise ValueError("available_until must be later than available_from")
         return self

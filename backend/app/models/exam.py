@@ -9,6 +9,7 @@ from app.database import Base
 class Exam(Base):
     __tablename__ = "exams"
     __table_args__ = (
+        CheckConstraint("pass_score = 40", name="ck_exams_pass_score"),
         CheckConstraint("max_attempts BETWEEN 1 AND 10", name="ck_exams_max_attempts"),
         CheckConstraint(
             "available_from IS NULL OR available_until IS NULL OR available_from < available_until",
@@ -19,7 +20,7 @@ class Exam(Base):
     course_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(255))
     duration_min: Mapped[int] = mapped_column(Integer, default=60)
-    pass_score: Mapped[float] = mapped_column(Numeric(5, 2), default=50.0)
+    pass_score: Mapped[float] = mapped_column(Numeric(5, 2), default=40.0, server_default="40")
     available_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     available_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     max_attempts: Mapped[int] = mapped_column(Integer, default=1, server_default="1")

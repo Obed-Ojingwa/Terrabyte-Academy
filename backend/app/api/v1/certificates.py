@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.certificate import Certificate
-from app.models.enrollment import Enrollment, LessonProgress
-from app.models.course import Course, Module
+from app.models.enrollment import Enrollment
 from app.models.user import User
 from app.schemas.lms import CertificateResponse, CertificateVerificationResponse
 from app.tasks.certificate_tasks import generate_and_upload_certificate
@@ -63,25 +62,11 @@ async def request_certificate(course_id: str, current_user=Depends(get_current_u
     enrollment = (
         await db.execute(
             select(Enrollment)
-            .options(selectinload(Enrollment.course).selectinload(Course.modules).selectinload(Module.lessons))
             .where(Enrollment.student_id == current_user.id, Enrollment.course_id == course_id)
         )
     ).scalar_one_or_none()
     if not enrollment:
         raise HTTPException(status_code=400, detail="You must be enrolled in the course to request a certificate")
-
-    lesson_ids = [lesson.id for module in enrollment.course.modules for lesson in module.lessons] if getattr(enrollment.course, "modules", None) else []
-    if lesson_ids:
-        progress_rows = (
-            await db.execute(select(LessonProgress).where(LessonProgress.student_id == current_user.id, LessonProgress.lesson_id.in_(lesson_ids)))
-        ).scalars().all()
-        if any(not progress.is_completed for progress in progress_rows) or len(progress_rows) < len(lesson_ids):
-            raise HTTPException(status_code=400, detail="Complete all lessons before requesting a certificate")
-
-    if enrollment.status != "completed":
-        enrollment.status = "completed"
-        enrollment.completed_at = datetime.utcnow()
-        await db.commit()
 
     import uuid as _uuid
     cert_number = f"TBA-{_uuid.uuid4().hex[:10].upper()}"

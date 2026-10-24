@@ -51,7 +51,6 @@ export default function TutorExamsPage() {
   const [examDraft, setExamDraft] = useState({
     title: "",
     duration_min: "60",
-    pass_score: "70",
     max_attempts: "1",
     available_from: "",
     available_until: "",
@@ -59,7 +58,6 @@ export default function TutorExamsPage() {
   const [newExamDraft, setNewExamDraft] = useState({
     title: "",
     duration_min: "60",
-    pass_score: "70",
     max_attempts: "1",
     available_from: "",
     available_until: "",
@@ -102,7 +100,6 @@ export default function TutorExamsPage() {
     setExamDraft({
       title: selectedExam.title,
       duration_min: String(selectedExam.duration_min),
-      pass_score: String(selectedExam.pass_score),
       max_attempts: String(selectedExam.max_attempts ?? 1),
       available_from: localDateTime(selectedExam.available_from),
       available_until: localDateTime(selectedExam.available_until),
@@ -116,7 +113,7 @@ export default function TutorExamsPage() {
       toast.success("Exam created");
       await queryClient.invalidateQueries({ queryKey: ["tutor-exams", courseId] });
       setExamId(exam.id);
-      setNewExamDraft({ title: "", duration_min: "60", pass_score: "70", max_attempts: "1", available_from: "", available_until: "" });
+      setNewExamDraft({ title: "", duration_min: "60", max_attempts: "1", available_from: "", available_until: "" });
     },
     onError: () => toast.error("Unable to create exam"),
   });
@@ -124,7 +121,7 @@ export default function TutorExamsPage() {
     mutationFn: async () => api.put(`/exams/${examId}`, {
       title: examDraft.title.trim(),
       duration_min: Number(examDraft.duration_min),
-      pass_score: Number(examDraft.pass_score),
+      pass_score: 40,
       max_attempts: Number(examDraft.max_attempts),
       available_from: toIso(examDraft.available_from),
       available_until: toIso(examDraft.available_until),
@@ -213,7 +210,7 @@ export default function TutorExamsPage() {
       course_id: courseId,
       title: newExamDraft.title.trim(),
       duration_min: Number(newExamDraft.duration_min),
-      pass_score: Number(newExamDraft.pass_score),
+      pass_score: 40,
       max_attempts: Number(newExamDraft.max_attempts),
       available_from: toIso(newExamDraft.available_from),
       available_until: toIso(newExamDraft.available_until),
@@ -302,7 +299,7 @@ export default function TutorExamsPage() {
                 <label className="block text-sm font-medium">Title<input value={newExamDraft.title} onChange={(event) => setNewExamDraft({ ...newExamDraft, title: event.target.value })} className={`${inputClass} mt-1`} maxLength={255} required /></label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="text-sm font-medium">Minutes<input type="number" min="1" max="1440" value={newExamDraft.duration_min} onChange={(event) => setNewExamDraft({ ...newExamDraft, duration_min: event.target.value })} className={`${inputClass} mt-1`} required /></label>
-                  <label className="text-sm font-medium">Pass %<input type="number" min="0" max="100" step="0.1" value={newExamDraft.pass_score} onChange={(event) => setNewExamDraft({ ...newExamDraft, pass_score: event.target.value })} className={`${inputClass} mt-1`} required /></label>
+                  <p className="text-sm font-medium">Pass score <span className={`${inputClass} mt-1 block bg-slate-100`}>40% (fixed)</span></p>
                 </div>
                 <label className="block text-sm font-medium">Attempts allowed<input type="number" min="1" max="10" value={newExamDraft.max_attempts} onChange={(event) => setNewExamDraft({ ...newExamDraft, max_attempts: event.target.value })} className={`${inputClass} mt-1`} required /></label>
                 <label className="block text-sm font-medium">Opens (optional)<input type="datetime-local" value={newExamDraft.available_from} onChange={(event) => setNewExamDraft({ ...newExamDraft, available_from: event.target.value })} className={`${inputClass} mt-1`} /></label>
@@ -333,7 +330,7 @@ export default function TutorExamsPage() {
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <label className="text-sm font-medium sm:col-span-2">Title<input value={examDraft.title} onChange={(event) => setExamDraft({ ...examDraft, title: event.target.value })} className={`${inputClass} mt-1`} required /></label>
                   <label className="text-sm font-medium">Duration (minutes)<input type="number" min="1" max="1440" value={examDraft.duration_min} onChange={(event) => setExamDraft({ ...examDraft, duration_min: event.target.value })} className={`${inputClass} mt-1`} required /></label>
-                  <label className="text-sm font-medium">Pass score (%)<input type="number" min="0" max="100" step="0.1" value={examDraft.pass_score} onChange={(event) => setExamDraft({ ...examDraft, pass_score: event.target.value })} className={`${inputClass} mt-1`} required /></label>
+                  <p className="text-sm font-medium">Pass score <span className={`${inputClass} mt-1 block bg-slate-100`}>40% (fixed)</span></p>
                   <label className="text-sm font-medium">Attempts (1–10)<input type="number" min="1" max="10" value={examDraft.max_attempts} onChange={(event) => setExamDraft({ ...examDraft, max_attempts: event.target.value })} className={`${inputClass} mt-1`} required /></label>
                   <label className="text-sm font-medium">Opens (optional)<input type="datetime-local" value={examDraft.available_from} onChange={(event) => setExamDraft({ ...examDraft, available_from: event.target.value })} className={`${inputClass} mt-1`} /></label>
                   <label className="text-sm font-medium">Closes (optional)<input type="datetime-local" value={examDraft.available_until} onChange={(event) => setExamDraft({ ...examDraft, available_until: event.target.value })} className={`${inputClass} mt-1`} /></label>

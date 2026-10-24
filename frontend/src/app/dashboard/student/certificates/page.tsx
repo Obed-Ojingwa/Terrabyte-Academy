@@ -23,15 +23,11 @@ export default function StudentCertificatesPage() {
     [certificates],
   );
 
-  const eligibleEnrollments = useMemo(
+  const requestableEnrollments = useMemo(
     () =>
       (enrollments ?? []).filter((enrollment: any) => {
         const courseId = enrollment.course_id || enrollment.course?.id;
-        return (
-          enrollment.progress >= 100 &&
-          courseId &&
-          !requestedCourseIds.has(courseId)
-        );
+        return courseId && !requestedCourseIds.has(courseId);
       }),
     [enrollments, requestedCourseIds],
   );
@@ -41,7 +37,6 @@ export default function StudentCertificatesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-certificates"] });
       qc.invalidateQueries({ queryKey: ["student-certificates"] });
-      qc.invalidateQueries({ queryKey: ["my-enrollments"] });
       toast.success("Certificate request submitted");
     },
     onError: () => toast.error("Unable to request certificate"),
@@ -70,12 +65,12 @@ export default function StudentCertificatesPage() {
         <p className="mt-1 text-sm text-slate-500">View your issued certificates and verification IDs.</p>
       </div>
 
-      {eligibleEnrollments.length > 0 && (
+      {requestableEnrollments.length > 0 && (
         <div className="mb-6 rounded-3xl border border-slate-200/70 bg-slate-50 p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-950">Request certificates for completed courses</h2>
-              <p className="mt-1 text-sm text-slate-600">Your certificate will use the name saved on your profile.</p>
+              <h2 className="text-lg font-semibold text-slate-950">Request a certificate</h2>
+              <p className="mt-1 text-sm text-slate-600">You can request at any course progress. An administrator reviews and issues each certificate.</p>
             </div>
           </div>
           {!profile?.certificate_name && (
@@ -84,10 +79,10 @@ export default function StudentCertificatesPage() {
             </p>
           )}
           <div className="space-y-3">
-            {eligibleEnrollments.map((enrollment: any) => (
+            {requestableEnrollments.map((enrollment: any) => (
               <div key={enrollment.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <div className="font-semibold text-slate-950">{enrollment.course?.title ?? "Completed course"}</div>
+                  <div className="font-semibold text-slate-950">{enrollment.course?.title ?? "Enrolled course"}</div>
                   <div className="text-sm text-slate-500">Progress: {enrollment.progress ?? 0}%</div>
                 </div>
                 <button
@@ -108,7 +103,7 @@ export default function StudentCertificatesPage() {
         {certificates.length === 0 ? (
           <div className="rounded-3xl border border-slate-200/70 bg-white p-8 text-center text-slate-500">
             <p className="font-semibold text-slate-950">No certificates yet</p>
-            <p className="mt-2 text-sm">Complete a course and request a certificate from your dashboard.</p>
+            <p className="mt-2 text-sm">Enroll in a course to request a certificate. An administrator will review and issue your request.</p>
           </div>
         ) : (
           certificates.map((cert: any) => (

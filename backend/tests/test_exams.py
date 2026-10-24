@@ -119,7 +119,7 @@ def make_exam(*, results=None):
         course_id=COURSE_ID,
         title="Arithmetic",
         duration_min=30,
-        pass_score=70.0,
+        pass_score=40.0,
         available_from=None,
         available_until=None,
         max_attempts=1,
@@ -652,6 +652,34 @@ def test_submission_is_attempt_bound_type_graded_and_atomic():
     assert result.passed is True
     assert result.answers == {str(QUESTION_ID): "4"}
     assert db.commit_count == 1
+
+
+@pytest.mark.parametrize(("correct_answers", "expected_passed"), [(2, True), (1, False)])
+def test_exam_pass_mark_is_40_percent(correct_answers, expected_passed):
+    exam = make_exam()
+    exam.questions = [make_question(uuid4(), position=index) for index in range(5)]
+    attempt = make_attempt()
+    answers = {
+        str(question.id): "4"
+        for question in exam.questions[:correct_answers]
+    }
+    db = FakeDB(
+        FakeExecutionResult(scalar=exam),
+        FakeExecutionResult(scalar=object()),
+        FakeExecutionResult(scalar=attempt),
+    )
+
+    result = asyncio.run(
+        submit_exam_result(
+            str(EXAM_ID),
+            ExamSubmissionCreate(attempt_id=attempt.id, answers=answers),
+            make_user("student"),
+            db,
+        )
+    )
+
+    assert result.passed is expected_passed
+    assert result.score == correct_answers
 
 
 def test_submission_rejects_answer_ids_outside_the_exam_without_commit():
