@@ -16,6 +16,12 @@ export interface Course {
   category?: string;
   level?: string;
   duration_weeks?: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  requirements?: string[];
+  learning_outcomes?: string[];
+  topics?: string[];
+  course_outline?: { title: string; topics: string[] }[];
   is_published: boolean;
   tutor?: CourseTutor;
   created_at: string;
@@ -27,7 +33,8 @@ export interface Enrollment {
   course_id?: string;
   course?: Course;
   mode: string;
-  status: "pending" | "active" | "completed";
+  status: "application_pending" | "pending" | "active" | "completed" | "rejected";
+  review_message?: string | null;
   progress?: number;
   enrolled_at: string;
   completed_at?: string;

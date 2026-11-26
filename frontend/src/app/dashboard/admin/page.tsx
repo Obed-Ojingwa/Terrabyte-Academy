@@ -19,11 +19,12 @@ export default function AdminDashboard() {
   const revenueSeries = stats?.revenue_series ?? [];
   const activityItems = stats?.recent_activity ?? [];
   const paymentNotifications = notifications.filter((notification: any) => notification.type === "payment" && !notification.is_read);
+  const applicationNotifications = notifications.filter((notification: any) => notification.type === "enrollment_application" && !notification.is_read);
   return (
     <div className="p-6 space-y-6 page-light min-h-full text-slate-950">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-black text-slate-950 tracking-tight">Admin Dashboard</h1><p className="text-slate-600 text-sm mt-1">Platform overview — {new Date().toLocaleDateString("en-NG",{month:"long",year:"numeric"})}</p></div>
-        <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all"><BookOpen size={15}/> New Course</button>
+        <Link href="/dashboard/admin/courses" className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all"><BookOpen size={15}/> New Course</Link>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Students" value={stats?.total_students ?? 0} icon={<Users size={16}/>} color="blue" change={12}/>
@@ -46,6 +47,39 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-4 space-y-2">
             {paymentNotifications.slice(0, 3).map((notification: any) => (
+              <div key={notification.id} className="flex items-start justify-between gap-3 rounded-xl bg-white/80 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">{notification.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">{notification.body}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => markRead.mutate(notification.id)}
+                  disabled={markRead.isPending}
+                  className="shrink-0 text-xs font-semibold text-brand-700 hover:underline"
+                >
+                  Mark read
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {applicationNotifications.length > 0 && (
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-bold text-blue-950">Course applications</h2>
+              <p className="mt-1 text-sm text-blue-900">
+                {applicationNotifications.length} new student {applicationNotifications.length === 1 ? "application needs" : "applications need"} review.
+              </p>
+            </div>
+            <Link href="/dashboard/admin/applications" className="rounded-xl bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-900">
+              Review applications
+            </Link>
+          </div>
+          <div className="mt-4 space-y-2">
+            {applicationNotifications.slice(0, 3).map((notification: any) => (
               <div key={notification.id} className="flex items-start justify-between gap-3 rounded-xl bg-white/80 p-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-950">{notification.title}</p>

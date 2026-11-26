@@ -98,6 +98,12 @@ def test_public_course_catalog_never_returns_material_urls():
         category="Technology",
         level="beginner",
         duration_weeks=4,
+        start_date=None,
+        end_date=None,
+        requirements=["Basic computer skills"],
+        learning_outcomes=["Create a GIS map"],
+        topics=["Coordinate systems"],
+        course_outline=[{"title": "Module 1", "topics": ["GIS concepts"]}],
         is_published=True,
         tutor=None,
         modules=[module],
@@ -107,4 +113,7 @@ def test_public_course_catalog_never_returns_material_urls():
     response = _course_catalog_response(course)
 
     assert response.description == "Course description"
+    assert response.requirements == ["Basic computer skills"]
+    assert response.learning_outcomes == ["Create a GIS map"]
+    assert response.course_outline[0].title == "Module 1"
     assert response.modules[0].lessons[0].materials == []

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, Boolean, ForeignKey, Integer, DateTime
+from sqlalchemy import String, Boolean, ForeignKey, Integer, DateTime, Text
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -13,6 +13,7 @@ class Enrollment(Base):
     course_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
     mode: Mapped[str] = mapped_column(String(50))
     status: Mapped[str] = mapped_column(String(50), default="pending")
+    review_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrolled_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     student: Mapped["User"] = relationship(foreign_keys=[student_id])

@@ -1,8 +1,8 @@
 import uuid
-from sqlalchemy import String, Boolean, ForeignKey, Numeric, Integer, Text, DateTime
+from datetime import date, datetime
+from sqlalchemy import String, Boolean, ForeignKey, Numeric, Integer, Text, DateTime, Date, JSON
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.database import Base
 
 
@@ -18,6 +18,12 @@ class Course(Base):
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
     level: Mapped[str | None] = mapped_column(String(50), nullable=True)
     duration_weeks: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    requirements: Mapped[list[str]] = mapped_column(JSON().with_variant(JSONB, "postgresql"), default=list)
+    learning_outcomes: Mapped[list[str]] = mapped_column(JSON().with_variant(JSONB, "postgresql"), default=list)
+    topics: Mapped[list[str]] = mapped_column(JSON().with_variant(JSONB, "postgresql"), default=list)
+    course_outline: Mapped[list[dict]] = mapped_column(JSON().with_variant(JSONB, "postgresql"), default=list)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     tutor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

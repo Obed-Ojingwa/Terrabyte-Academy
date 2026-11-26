@@ -39,9 +39,7 @@ export default function CourseDetailPage() {
   const enrollMutation = useMutation({
     mutationFn: async () => api.post("/enrollments", { course_id: courseId, mode: course?.mode || "online" }),
     onSuccess: () => {
-      toast.success(freeCourse
-        ? "You are now enrolled in this course."
-        : "Course application added to your dashboard. Complete payment to unlock materials.");
+      toast.success("Your application has been sent to the admin team for review.");
       router.push("/dashboard/student");
     },
     onError: (error: any) => {
@@ -50,10 +48,11 @@ export default function CourseDetailPage() {
   });
 
   const freeCourse = course?.price === 0;
-  const alreadyApplied = enrollments.some(
-    (enrollment: { course_id?: string; course?: { id?: string } }) =>
-      (enrollment.course_id || enrollment.course?.id) === courseId,
+  const existingApplication = enrollments.find(
+    (enrollment: { course_id?: string; course?: { id?: string }; status?: string }) =>
+      (enrollment.course_id || enrollment.course?.id) === courseId && enrollment.status !== "rejected",
   );
+  const alreadyApplied = Boolean(existingApplication);
 
   return (
     <div className="page-light min-h-screen pt-20 text-slate-950">
@@ -66,7 +65,7 @@ export default function CourseDetailPage() {
             </button>
             <div>
               <h1 className="text-4xl font-black tracking-tight">Course details</h1>
-              <p className="text-slate-600">Review the course and complete enrollment to unlock full access.</p>
+              <p className="text-slate-600">Review the course details and apply. Applications are reviewed by an administrator.</p>
             </div>
           </div>
           <Link href="/public/courses" className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm hover:bg-slate-50 transition-all">
@@ -109,12 +108,12 @@ export default function CourseDetailPage() {
                   <div className="mt-2 text-lg font-semibold text-slate-950">{course.duration_weeks ? `${course.duration_weeks} weeks` : "Flexible"}</div>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Published</div>
-                  <div className="mt-2 text-lg font-semibold text-slate-950">{formatDate(course.created_at)}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Start date</div>
+                  <div className="mt-2 text-lg font-semibold text-slate-950">{course.start_date ? formatDate(course.start_date) : "To be announced"}</div>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Mode</div>
-                  <div className="mt-2 text-lg font-semibold text-slate-950">{course.mode}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">End date</div>
+                  <div className="mt-2 text-lg font-semibold text-slate-950">{course.end_date ? formatDate(course.end_date) : "To be announced"}</div>
                 </div>
               </div>
 
@@ -133,15 +132,47 @@ export default function CourseDetailPage() {
 
               <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
                 <div className="mb-4 text-lg font-semibold text-slate-950">What you'll learn</div>
-                <div className="space-y-3 text-slate-600">
-                  <p>Gain practical skills in {course.category || "this course"} with structured learning, real-world assignments, and mentorship support.</p>
-                  <p>Designed for learners who want to move quickly from theory to hands-on application.</p>
-                </div>
+                {course.learning_outcomes?.length ? (
+                  <ul className="list-disc space-y-2 pl-5 text-slate-600">
+                    {course.learning_outcomes.map((outcome: string) => <li key={outcome}>{outcome}</li>)}
+                  </ul>
+                ) : (
+                  <p className="text-slate-600">Gain practical skills in {course.category || "this course"} with structured learning and hands-on exercises.</p>
+                )}
               </div>
+
+              {!!course.topics?.length && (
+                <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="mb-4 text-lg font-semibold text-slate-950">Topics covered</div>
+                  <ul className="grid gap-2 text-slate-600 sm:grid-cols-2">
+                    {course.topics.map((topic: string) => <li key={topic} className="rounded-xl bg-white px-4 py-3">{topic}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {!!course.requirements?.length && (
+                <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="mb-4 text-lg font-semibold text-slate-950">Requirements</div>
+                  <ul className="list-disc space-y-2 pl-5 text-slate-600">
+                    {course.requirements.map((requirement: string) => <li key={requirement}>{requirement}</li>)}
+                  </ul>
+                </div>
+              )}
 
               <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
                 <div className="mb-4 text-lg font-semibold text-slate-950">Course outline</div>
-                {!course.modules?.length ? (
+                {course.course_outline?.length ? (
+                  <div className="space-y-4">
+                    {course.course_outline.map((module: { title: string; topics: string[] }) => (
+                      <div key={module.title} className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <p className="font-semibold text-slate-950">{module.title}</p>
+                        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
+                          {module.topics.map((topic) => <li key={topic}>{topic}</li>)}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                ) : !course.modules?.length ? (
                   <p className="text-sm text-slate-500">Lesson structure is being prepared. Check back later for a full syllabus.</p>
                 ) : (
                   <div className="space-y-4">
@@ -194,7 +225,11 @@ export default function CourseDetailPage() {
                       href="/dashboard/student"
                       className="block w-full rounded-2xl border border-brand-200 bg-brand-50 py-4 text-center font-bold text-brand-700 transition-all hover:bg-brand-100"
                     >
-                      View this course on your dashboard
+                      {existingApplication?.status === "application_pending"
+                        ? "Application awaiting approval"
+                        : existingApplication?.status === "pending"
+                          ? "Complete payment from your dashboard"
+                          : "View this course on your dashboard"}
                     </Link>
                   ) : (
                     <button
@@ -205,9 +240,7 @@ export default function CourseDetailPage() {
                     >
                       {enrollMutation.isPending
                         ? "Applying..."
-                        : freeCourse
-                          ? "Apply for free"
-                          : "Apply to course"}
+                        : "Apply to course"}
                     </button>
                   )}
                 </div>
@@ -223,6 +256,7 @@ export default function CourseDetailPage() {
                   <p><strong className="text-slate-900">Level:</strong> {course.level || "Beginner"}</p>
                   <p><strong className="text-slate-900">Created on:</strong> {formatDate(course.created_at)}</p>
                   <p><strong className="text-slate-900">Course mode:</strong> {course.mode}</p>
+                  <p><strong className="text-slate-900">Published:</strong> {formatDate(course.created_at)}</p>
                 </div>
               </div>
             </aside>

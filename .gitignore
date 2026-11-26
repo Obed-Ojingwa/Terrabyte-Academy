@@ -6,7 +6,6 @@ __pycache__/
 *.py[cod]
 *.pyo
 venv/
-.env
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
@@ -24,8 +23,6 @@ backend/seed_data.py
 # Node
 node_modules/
 .next/
-.env.local
-.env.production
 out/
 build/
 
@@ -37,7 +34,6 @@ build/
 Thumbs.db
 
 # IDE
-.vscode/
 .idea/
 *.swp
 
@@ -50,3 +46,4 @@ CERTIFICATE_ISSUANCE_IMPLEMENTATION_GUIDE.md
 ENROLLMENT_TO_CERTIFICATE_WORKFLOW.md
 20261019_seed_demo_role_accounts.sql
 seed_demo_accounts.py
+config.bat

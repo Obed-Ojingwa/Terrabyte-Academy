@@ -48,6 +48,8 @@ class PaymentService:
             raise HTTPException(status_code=400, detail="Apply for this course before making a payment")
         if enrollment.status in {"active", "completed"}:
             raise HTTPException(status_code=409, detail="You already have access to this course")
+        if enrollment.status != "pending":
+            raise HTTPException(status_code=403, detail="Your course application must be approved before making a payment")
         return enrollment
 
     async def initialize_payment(self, course_id: str, mode: str, user):
@@ -194,6 +196,8 @@ class PaymentService:
         ).scalar_one_or_none()
         if not enrollment:
             raise HTTPException(status_code=409, detail="The course application for this payment no longer exists")
+        if enrollment.status not in {"pending", "active", "completed"}:
+            raise HTTPException(status_code=409, detail="The course application must be approved before payment can grant access")
 
         message = (payload.message or "").strip()
         if payload.decision == "approve":
@@ -235,6 +239,8 @@ class PaymentService:
         enrollment = (await self.db.execute(enrollment_query)).scalar_one_or_none()
         if not enrollment:
             raise HTTPException(status_code=409, detail="The course application for this payment no longer exists")
+        if enrollment.status not in {"pending", "active", "completed"}:
+            raise HTTPException(status_code=409, detail="The course application must be approved before payment can grant access")
 
         already_confirmed = payment.status == "success"
         if not already_confirmed:

@@ -2,6 +2,9 @@ import asyncio
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
+
 from app.models.payment import Payment
 from app.schemas.payment import PaymentReportRequest, PaymentReviewRequest
 from app.services.payment_service import PaymentService
@@ -143,3 +146,13 @@ def test_admin_rejection_keeps_application_locked():
     assert payment.status == "rejected"
     assert payment.metadata_["review_message"] == "Please send a valid receipt."
     assert enrollment.status == "pending"
+
+
+def test_payment_cannot_be_started_before_course_application_approval():
+    student = SimpleNamespace(id=uuid4())
+    enrollment = SimpleNamespace(status="application_pending")
+    db = FakeDB(FakeResult(enrollment))
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(PaymentService(db)._student_enrollment(uuid4(), student))
+    assert error.value.status_code == 403

@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CourseTutorSummary(BaseModel):
@@ -48,6 +48,11 @@ class CourseModuleSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CourseOutlineModule(BaseModel):
+    title: str
+    topics: List[str] = Field(default_factory=list)
+
+
 class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
@@ -55,7 +60,15 @@ class CourseCreate(BaseModel):
     mode: str
     category: Optional[str] = None
     level: Optional[str] = None
-    duration_weeks: Optional[int] = None
+    duration_weeks: Optional[int] = Field(default=None, ge=1)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    requirements: List[str] = Field(default_factory=list)
+    learning_outcomes: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
+    course_outline: List[CourseOutlineModule] = Field(default_factory=list)
+    is_published: bool = False
+    thumbnail_url: Optional[str] = None
     tutor_id: Optional[UUID] = None
 
 
@@ -66,8 +79,15 @@ class CourseUpdate(BaseModel):
     mode: Optional[str] = None
     category: Optional[str] = None
     level: Optional[str] = None
-    duration_weeks: Optional[int] = None
+    duration_weeks: Optional[int] = Field(default=None, ge=1)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    requirements: Optional[List[str]] = None
+    learning_outcomes: Optional[List[str]] = None
+    topics: Optional[List[str]] = None
+    course_outline: Optional[List[CourseOutlineModule]] = None
     is_published: Optional[bool] = None
+    thumbnail_url: Optional[str] = None
     tutor_id: Optional[UUID] = None
 
 
@@ -103,6 +123,12 @@ class CourseResponse(BaseModel):
     category: Optional[str]
     level: Optional[str]
     duration_weeks: Optional[int]
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    requirements: List[str] = Field(default_factory=list)
+    learning_outcomes: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
+    course_outline: List[CourseOutlineModule] = Field(default_factory=list)
     is_published: bool
     tutor: Optional[CourseTutorSummary] = None
     modules: Optional[List[CourseModuleSummary]] = None

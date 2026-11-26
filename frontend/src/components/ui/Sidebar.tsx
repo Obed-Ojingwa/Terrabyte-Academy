@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
-import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, Settings, LogOut, BarChart2, BarChart3, CheckSquare, Newspaper, Calendar, User, Menu, X } from "lucide-react";
+import { LayoutDashboard, BookOpen, FileText, Trophy, Award, Users, CreditCard, Settings, LogOut, BarChart2, BarChart3, CheckSquare, Newspaper, Calendar, User, Menu, X, ClipboardCheck } from "lucide-react";
 
 
 const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
@@ -29,9 +29,11 @@ const navMap: Record<string, { label: string; icon: any; href: string }[]> = {
   admin: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/admin" },
     { label: "Courses", icon: BookOpen, href: "/dashboard/admin/courses" },
+    { label: "Applications", icon: ClipboardCheck, href: "/dashboard/admin/applications" },
     { label: "Students", icon: Users, href: "/dashboard/admin/students" },
     { label: "Student progress", icon: BarChart3, href: "/dashboard/admin/students/progress" },
     { label: "Payments", icon: CreditCard, href: "/dashboard/admin/payments" },
+    { label: "Applications", icon: ClipboardCheck, href: "/dashboard/admin/applications" },
     { label: "Certificates", icon: Award, href: "/dashboard/admin/certificates" },
     { label: "Content", icon: Newspaper, href: "/dashboard/admin/content" },
     { label: "Blog", icon: Newspaper, href: "/dashboard/admin/blog" },

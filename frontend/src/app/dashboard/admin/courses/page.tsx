@@ -18,6 +18,12 @@ type AdminCourse = {
   category?: string;
   level?: string;
   duration_weeks?: number | string;
+  start_date?: string | null;
+  end_date?: string | null;
+  requirements?: string[];
+  learning_outcomes?: string[];
+  topics?: string[];
+  course_outline?: { title: string; topics: string[] }[];
   tutor?: { id?: string };
   is_published?: boolean;
 };
@@ -30,9 +36,33 @@ type CourseFormState = {
   category: string;
   level: string;
   duration_weeks: string;
+  start_date: string;
+  end_date: string;
+  requirements: string;
+  learning_outcomes: string;
+  topics: string;
+  course_outline: string;
   tutor_id: string;
   is_published: boolean;
 };
+
+const parseLines = (value: string) =>
+  value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+
+const parseOutline = (value: string) =>
+  value.split(/\r?\n\s*\r?\n/).map((section) => {
+    const [title, ...topics] = section.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    return {
+      title: title.replace(/^#+\s*/, ""),
+      topics: topics.map((topic) => topic.replace(/^[-*]\s*/, "")),
+    };
+  }).filter((section) => section.title);
+
+const formatOutline = (sections: AdminCourse["course_outline"]) =>
+  (sections ?? []).map((section) => [
+    section.title,
+    ...(section.topics ?? []).map((topic) => `- ${topic}`),
+  ].join("\n")).join("\n\n");
 
 const emptyForm = (): CourseFormState => ({
   title: "",
@@ -41,7 +71,13 @@ const emptyForm = (): CourseFormState => ({
   mode: "online",
   category: "",
   level: "beginner",
-  duration_weeks: "4",
+  duration_weeks: "",
+  start_date: "",
+  end_date: "",
+  requirements: "",
+  learning_outcomes: "",
+  topics: "",
+  course_outline: "",
   tutor_id: "",
   is_published: false,
 });
@@ -56,7 +92,7 @@ export default function AdminCoursesPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-courses"],
-    queryFn: async () => (await api.get("/courses")).data,
+    queryFn: async () => (await api.get("/courses/me")).data,
   });
 
   const courseMaterialsQuery = useQuery<CourseMaterialResponse[]>({
@@ -116,7 +152,7 @@ export default function AdminCoursesPage() {
     onError: () => toast.error("Unable to assign tutor"),
   });
 
-  const courses = useMemo(() => data?.items ?? [], [data]);
+  const courses = useMemo(() => data?.items ?? data ?? [], [data]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +164,12 @@ export default function AdminCoursesPage() {
       category: form.category || null,
       level: form.level || null,
       duration_weeks: form.duration_weeks ? Number(form.duration_weeks) : null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      requirements: parseLines(form.requirements),
+      learning_outcomes: parseLines(form.learning_outcomes),
+      topics: parseLines(form.topics),
+      course_outline: parseOutline(form.course_outline),
       tutor_id: form.tutor_id || null,
       is_published: form.is_published,
       thumbnail_url: thumbnailUrl || null,
@@ -149,7 +191,13 @@ export default function AdminCoursesPage() {
       mode: String(course.mode ?? "online"),
       category: String(course.category ?? ""),
       level: String(course.level ?? "beginner"),
-      duration_weeks: String(course.duration_weeks ?? 4),
+      duration_weeks: course.duration_weeks ? String(course.duration_weeks) : "",
+      start_date: course.start_date ?? "",
+      end_date: course.end_date ?? "",
+      requirements: (course.requirements ?? []).join("\n"),
+      learning_outcomes: (course.learning_outcomes ?? []).join("\n"),
+      topics: (course.topics ?? []).join("\n"),
+      course_outline: formatOutline(course.course_outline),
       tutor_id: String(course.tutor?.id ?? ""),
       is_published: Boolean(course.is_published),
     });
@@ -186,6 +234,7 @@ export default function AdminCoursesPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Course title" required />
             <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Price" type="number" />
+            <p className="text-xs text-slate-500 md:col-span-2">A price of 0 makes the course free. Set its price before publishing if payment is required.</p>
             <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Category" />
             <input value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Level" />
             <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950">
@@ -193,7 +242,15 @@ export default function AdminCoursesPage() {
               <option value="offline">Offline</option>
               <option value="hybrid">Hybrid</option>
             </select>
-            <input value={form.duration_weeks} onChange={(e) => setForm({ ...form, duration_weeks: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Duration weeks" type="number" />
+            <input value={form.duration_weeks} onChange={(e) => setForm({ ...form, duration_weeks: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Duration in weeks (optional)" type="number" min="1" />
+            <label className="text-xs font-medium text-slate-600">
+              Start date (optional)
+              <input value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" type="date" />
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              End date (optional)
+              <input value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" type="date" />
+            </label>
             <input value={form.tutor_id} onChange={(e) => setForm({ ...form, tutor_id: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Tutor ID" />
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
@@ -201,6 +258,24 @@ export default function AdminCoursesPage() {
             </label>
           </div>
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-4 min-h-[120px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950" placeholder="Description" />
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="text-sm font-semibold text-slate-700">
+              Requirements
+              <textarea value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} className="mt-2 min-h-[100px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-normal text-slate-950" placeholder="One requirement per line" />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Learning outcomes
+              <textarea value={form.learning_outcomes} onChange={(e) => setForm({ ...form, learning_outcomes: e.target.value })} className="mt-2 min-h-[100px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-normal text-slate-950" placeholder="One outcome per line" />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Course topics
+              <textarea value={form.topics} onChange={(e) => setForm({ ...form, topics: e.target.value })} className="mt-2 min-h-[100px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-normal text-slate-950" placeholder="One topic per line" />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Course modules and contents
+              <textarea value={form.course_outline} onChange={(e) => setForm({ ...form, course_outline: e.target.value })} className="mt-2 min-h-[180px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-normal text-slate-950" placeholder={"Module title\n- Module topic\n- Another topic\n\nAnother module title\n- Module topic"} />
+            </label>
+          </div>
           <div className="mt-4">
             <MediaUploader label="Course thumbnail" accept="image/*" onUploaded={(url) => setThumbnailUrl(url)} />
           </div>

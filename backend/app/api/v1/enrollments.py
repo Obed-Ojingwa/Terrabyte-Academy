@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -6,7 +8,16 @@ from app.database import get_db
 from app.api.deps import get_current_user, require_admin
 from app.models.enrollment import Enrollment, LessonProgress
 from app.models.course import Course, Module, Lesson
-from app.schemas.lms import EnrollmentCreate, EnrollmentResponse, EnrollmentUpdate, LessonProgressResponse
+from app.schemas.lms import (
+    CourseApplicationResponse,
+    EnrollmentCreate,
+    EnrollmentResponse,
+    EnrollmentReviewRequest,
+    EnrollmentReviewResponse,
+    EnrollmentUpdate,
+    LessonProgressResponse,
+)
+from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
 
@@ -99,6 +110,17 @@ async def get_enrollment(enrollment_id: str, current_user=Depends(get_current_us
     return await _attach_course_context(enrollment, current_user, db)
 
 
+@router.get("/applications/pending", response_model=list[CourseApplicationResponse])
+async def list_pending_applications(current_user=Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Enrollment)
+        .options(joinedload(Enrollment.student), joinedload(Enrollment.course))
+        .where(Enrollment.status == "application_pending")
+        .order_by(Enrollment.enrolled_at.asc())
+    )
+    return result.scalars().all()
+
+
 @router.post("/", response_model=EnrollmentResponse, status_code=201)
 async def create_enrollment(payload: EnrollmentCreate, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role.name != "student":
@@ -114,26 +136,92 @@ async def create_enrollment(payload: EnrollmentCreate, current_user=Depends(get_
             select(Enrollment).where(
                 Enrollment.student_id == current_user.id,
                 Enrollment.course_id == course.id,
-                Enrollment.status.in_(["active", "pending", "completed"]),
             )
         )
     ).scalar_one_or_none()
-    if existing_enrollment:
+    if existing_enrollment and existing_enrollment.status != "rejected":
         raise HTTPException(
             status_code=409,
-            detail="You already applied for this course" if existing_enrollment.status == "pending" else "You are already enrolled in this course",
+            detail="You already applied for this course"
+            if existing_enrollment.status == "application_pending"
+            else "You are already enrolled in or awaiting payment for this course",
         )
 
-    enrollment = Enrollment(
-        student_id=current_user.id,
-        course_id=course.id,
-        mode=payload.mode,
-        status="pending" if float(course.price or 0) > 0 else "active",
-    )
-    db.add(enrollment)
+    if existing_enrollment:
+        enrollment = existing_enrollment
+        enrollment.mode = payload.mode
+        enrollment.status = "application_pending"
+        enrollment.review_message = None
+        enrollment.enrolled_at = datetime.utcnow()
+    else:
+        enrollment = Enrollment(
+            student_id=current_user.id,
+            course_id=course.id,
+            mode=payload.mode,
+            status="application_pending",
+        )
+        db.add(enrollment)
     await db.commit()
     await db.refresh(enrollment)
+    await NotificationService(db).notify_admins(
+        "New course application",
+        f"{current_user.first_name} {current_user.last_name} applied for {course.title}. Review the application to continue.",
+        link="/dashboard/admin/applications",
+        notification_type="enrollment_application",
+    )
     return await _attach_course_context(enrollment, current_user, db)
+
+
+@router.post("/{enrollment_id}/review", response_model=EnrollmentReviewResponse)
+async def review_course_application(
+    enrollment_id: str,
+    payload: EnrollmentReviewRequest,
+    current_user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    if payload.decision not in {"approve", "reject"}:
+        raise HTTPException(status_code=422, detail="Decision must be approve or reject")
+    result = await db.execute(
+        select(Enrollment)
+        .options(joinedload(Enrollment.student), joinedload(Enrollment.course))
+        .where(Enrollment.id == enrollment_id)
+        .with_for_update()
+    )
+    enrollment = result.scalar_one_or_none()
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Course application not found")
+    if enrollment.status != "application_pending":
+        raise HTTPException(status_code=409, detail="Only applications awaiting review can be approved or rejected")
+
+    approved = payload.decision == "approve"
+    course_title = enrollment.course.title
+    course_price = float(enrollment.course.price or 0)
+    enrollment.review_message = None if approved else (payload.message or "").strip() or None
+    enrollment.status = "active" if approved and course_price <= 0 else (
+        "pending" if approved else "rejected"
+    )
+    await db.commit()
+    await db.refresh(enrollment)
+    if approved:
+        body = (
+            f"Your application for {course_title} was approved. You are enrolled."
+            if enrollment.status == "active"
+            else f"Your application for {course_title} was approved. Complete payment from your dashboard to unlock course materials."
+        )
+    else:
+        body = (payload.message or "").strip() or f"Your application for {course_title} was not approved. Contact the admin team if you have questions."
+    await NotificationService(db).create(
+        user_id=str(enrollment.student_id),
+        title="Course application approved" if approved else "Course application update",
+        body=body,
+        type="enrollment",
+        link="/dashboard/student",
+    )
+    return EnrollmentReviewResponse(
+        id=enrollment.id,
+        status=enrollment.status,
+        review_message=enrollment.review_message,
+    )
 
 
 @router.put("/{enrollment_id}", response_model=EnrollmentResponse)
@@ -143,7 +231,11 @@ async def update_enrollment(enrollment_id: str, payload: EnrollmentUpdate, curre
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    if "status" in changes and changes["status"] != enrollment.status:
+        if changes["status"] != "completed" or enrollment.status not in {"active", "completed"}:
+            raise HTTPException(status_code=409, detail="Use the application review or payment approval workflow to change course access")
+    for field, value in changes.items():
         setattr(enrollment, field, value)
 
     await db.commit()

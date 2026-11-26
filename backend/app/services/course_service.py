@@ -172,7 +172,7 @@ class CourseService:
         result = await self.db.execute(
             select(Course)
             .options(joinedload(Course.tutor), joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials))
-            .where(Course.id == course_id)
+            .where(Course.id == course_id, Course.is_published.is_(True))
         )
         course = result.scalar_one_or_none()
         if not course:
@@ -180,6 +180,8 @@ class CourseService:
         return _course_catalog_response(course)
 
     async def create_course(self, payload: CourseCreate, user) -> CourseResponse:
+        if payload.start_date and payload.end_date and payload.end_date < payload.start_date:
+            raise HTTPException(status_code=422, detail="End date must be on or after the start date")
         slug = slugify(payload.title)
         count = (await self.db.execute(select(func.count()).where(Course.slug.like(f"{slug}%")))).scalar()
         if count:
@@ -187,9 +189,15 @@ class CourseService:
         course = Course(**payload.model_dump(exclude={"tutor_id"}), slug=slug, created_by=user.id, tutor_id=payload.tutor_id)
         self.db.add(course)
         await self.db.commit()
-        await self.db.refresh(course)
-        if course.tutor_id:
-            await self.db.refresh(course, attribute_names=["tutor"])
+        result = await self.db.execute(
+            select(Course)
+            .options(
+                joinedload(Course.tutor),
+                joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials),
+            )
+            .where(Course.id == course.id)
+        )
+        course = result.unique().scalar_one()
         return CourseResponse.model_validate(course)
 
     async def update_course(self, course_id: str, payload: CourseUpdate, user) -> CourseResponse:
@@ -202,10 +210,20 @@ class CourseService:
                 raise HTTPException(status_code=403, detail="Not authorized")
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(course, field, value)
+        start_date = payload.start_date if "start_date" in payload.model_fields_set else course.start_date
+        end_date = payload.end_date if "end_date" in payload.model_fields_set else course.end_date
+        if start_date and end_date and end_date < start_date:
+            raise HTTPException(status_code=422, detail="End date must be on or after the start date")
         await self.db.commit()
-        await self.db.refresh(course)
-        if course.tutor_id:
-            await self.db.refresh(course, attribute_names=["tutor"])
+        result = await self.db.execute(
+            select(Course)
+            .options(
+                joinedload(Course.tutor),
+                joinedload(Course.modules).joinedload(Module.lessons).joinedload(Lesson.materials),
+            )
+            .where(Course.id == course.id)
+        )
+        course = result.unique().scalar_one()
         return CourseResponse.model_validate(course)
 
     async def delete_course(self, course_id: str, user):

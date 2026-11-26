@@ -71,7 +71,13 @@ export default function StudentLearningPage() {
               <button key={enrollment.id} onClick={() => { setSelectedEnrollment(enrollment.id); setSelectedLesson(null); }} className={`w-full rounded-2xl border px-3 py-4 text-left ${selectedCourse?.id === enrollment.id ? "border-brand-500 bg-brand-500/10" : "border-slate-200 bg-slate-50"}`}>
                 <div className="font-semibold text-slate-950">{enrollment.course?.title ?? "Course"}</div>
                 <div className="mt-1 text-xs text-slate-500">
-                  {["active", "completed"].includes(enrollment.status) ? "Access granted" : "Payment required"}
+                  {["active", "completed"].includes(enrollment.status)
+                    ? "Access granted"
+                    : enrollment.status === "application_pending"
+                      ? "Awaiting application approval"
+                      : enrollment.status === "rejected"
+                        ? "Application not approved"
+                        : "Payment required"}
                 </div>
               </button>
             ))}
@@ -99,15 +105,21 @@ export default function StudentLearningPage() {
 
       <div className="page-surface rounded-3xl p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2"><CheckCircle2 size={18} className="text-brand-400" /><h2 className="text-lg font-semibold text-slate-950">Lesson progress</h2></div>
-        {selectedCourse?.status === "pending" ? (
+        {selectedCourse && !["active", "completed"].includes(selectedCourse.status) ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-            <h3 className="font-semibold text-amber-950">{selectedCourse.course?.title ?? "Course"} is locked</h3>
+            <h3 className="font-semibold text-amber-950">{selectedCourse.course?.title ?? "Course"} is not available yet</h3>
             <p className="mt-2 text-sm text-amber-900">
-              Lessons, videos, audio, PDFs, and other course materials will be available after your payment is approved.
+              {selectedCourse.status === "application_pending"
+                ? "Your application is waiting for administrator approval. Payment and course materials will become available after approval."
+                : selectedCourse.status === "rejected"
+                  ? selectedCourse.review_message || "Your application was not approved. Contact the admin team or reapply from the course page."
+                  : "Lessons, videos, audio, PDFs, and other course materials will be available after your payment is approved."}
             </p>
-            <Link href="/dashboard/student" className="mt-4 inline-flex rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-              Go to dashboard payment options
-            </Link>
+            {selectedCourse.status === "pending" && (
+              <Link href="/dashboard/student" className="mt-4 inline-flex rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                Go to dashboard payment options
+              </Link>
+            )}
           </div>
         ) : selectedCourse ? (
           <div className="space-y-4">

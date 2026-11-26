@@ -137,9 +137,17 @@ export default function StudentDashboard() {
                       <span className={`rounded-full px-2.5 py-1 font-semibold ${
                         ["active", "completed"].includes(e.status)
                           ? "bg-emerald-50 text-emerald-700"
-                          : "bg-amber-50 text-amber-800"
+                          : e.status === "rejected"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-amber-50 text-amber-800"
                       }`}>
-                        {["active", "completed"].includes(e.status) ? "Access granted" : "Awaiting payment"}
+                        {["active", "completed"].includes(e.status)
+                          ? "Access granted"
+                          : e.status === "application_pending"
+                            ? "Awaiting admin approval"
+                            : e.status === "rejected"
+                              ? "Application not approved"
+                              : "Awaiting payment"}
                       </span>
                       {e.status === "active" && (
                         <span className="text-slate-500">Progress: {e.progress ?? 0}%</span>
@@ -155,7 +163,7 @@ export default function StudentDashboard() {
                 <div className="flex flex-wrap gap-2">
                   {["active", "completed"].includes(e.status) ? (
                     <a href="/dashboard/student/learning" className="rounded-xl bg-brand-500 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600">Continue learning</a>
-                  ) : (
+                  ) : e.status === "pending" ? (
                     <>
                       <PaystackButton
                         courseId={e.course_id || e.course?.id}
@@ -175,6 +183,17 @@ export default function StudentDashboard() {
                         I paid by transfer
                       </button>
                     </>
+                  ) : e.status === "application_pending" ? (
+                    <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                      Awaiting admin approval
+                    </span>
+                  ) : (
+                    <a
+                      href={`/public/courses/${e.course_id || e.course?.id}`}
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      View course and reapply
+                    </a>
                   )}
                   {!certificateCourseIds.has(e.course_id || e.course?.id) && ["active", "completed"].includes(e.status) && (
                     <button
@@ -185,22 +204,29 @@ export default function StudentDashboard() {
                   )}
                 </div>
               </div>
-              {e.status === "pending" && (() => {
+              {["application_pending", "pending", "rejected"].includes(e.status) && (() => {
                 const latestPayment = latestPaymentByCourse.get(e.course_id || e.course?.id);
                 return (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                     <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
                       <LockKeyhole size={16} />
-                      {latestPayment?.status === "reported"
-                        ? "Payment report is waiting for admin approval"
-                        : latestPayment?.status === "rejected"
-                          ? "Payment report needs attention"
-                          : "Course materials and certificates are locked until payment is approved"}
+                      {e.status === "application_pending"
+                        ? "Your application is waiting for admin approval. Payment and course materials are unavailable until then."
+                        : e.status === "rejected"
+                          ? "Your course application was not approved."
+                          : latestPayment?.status === "reported"
+                            ? "Payment report is waiting for admin approval"
+                            : latestPayment?.status === "rejected"
+                              ? "Payment report needs attention"
+                              : "Course materials and certificates are locked until payment is approved"}
                     </p>
-                    {latestPayment?.review_message && (
+                    {e.review_message && (
+                      <p className="mt-2 text-sm text-amber-900">Admin note: {e.review_message}</p>
+                    )}
+                    {latestPayment?.review_message && e.status === "pending" && (
                       <p className="mt-2 text-sm text-amber-900">{latestPayment.review_message}</p>
                     )}
-                    {reportingCourseId === e.id && (
+                    {reportingCourseId === e.id && e.status === "pending" && (
                       <form
                         onSubmit={(event) => {
                           event.preventDefault();
@@ -243,7 +269,7 @@ export default function StudentDashboard() {
               })()}
             </div>
           ))}
-          {!enrollments.length && <p className="text-slate-500 text-sm text-center py-8">No enrolled courses yet. <a href="/public/courses" className="text-brand-600 hover:underline">Browse courses →</a></p>}
+          {!enrollments.length && <p className="text-slate-500 text-sm text-center py-8">No course applications yet. <a href="/public/courses" className="text-brand-600 hover:underline">Browse courses →</a></p>}
         </div>
       </div>
 

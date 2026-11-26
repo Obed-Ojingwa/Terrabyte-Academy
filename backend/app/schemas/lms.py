@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import json
 from typing import Any, Literal, Optional
 from uuid import UUID
@@ -392,12 +392,53 @@ class EnrollmentUpdate(BaseModel):
     completed_at: Optional[datetime] = None
 
 
+class EnrollmentReviewRequest(BaseModel):
+    decision: Literal["approve", "reject"]
+    message: Optional[str] = None
+
+
+class EnrollmentReviewResponse(BaseModel):
+    id: UUID
+    status: str
+    review_message: Optional[str] = None
+
+
+class CourseApplicationCourseSummary(BaseModel):
+    id: UUID
+    title: str
+    description: Optional[str] = None
+    price: float
+    mode: str
+    category: Optional[str] = None
+    level: Optional[str] = None
+    duration_weeks: Optional[int] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseApplicationResponse(BaseModel):
+    id: UUID
+    student_id: UUID
+    course_id: UUID
+    mode: str
+    status: str
+    review_message: Optional[str] = None
+    enrolled_at: datetime
+    student: Optional[CertificateStudentSummary] = None
+    course: Optional[CourseApplicationCourseSummary] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class EnrollmentResponse(BaseModel):
     id: UUID
     student_id: UUID
     course_id: UUID
     mode: str
     status: str
+    review_message: Optional[str] = None
     progress: Optional[int] = None
     enrolled_at: datetime
     completed_at: Optional[datetime] = None
@@ -515,3 +556,4 @@ class StudentProfileResponse(BaseModel):
     total_certificates_earned: int = 0
 
     model_config = ConfigDict(from_attributes=True)
+    

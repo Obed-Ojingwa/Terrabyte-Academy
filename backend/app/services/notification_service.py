@@ -32,7 +32,13 @@ class NotificationService:
             link="/dashboard/student/certificates",
         )
 
-    async def notify_admins(self, title: str, body: str, link: str = "/dashboard/admin/payments"):
+    async def notify_admins(
+        self,
+        title: str,
+        body: str,
+        link: str = "/dashboard/admin/payments",
+        notification_type: str = "payment",
+    ):
         admin_ids = (
             await self.db.execute(
                 select(User.id)
@@ -45,7 +51,7 @@ class NotificationService:
                 user_id=admin_id,
                 title=title,
                 body=body,
-                type="payment",
+                type=notification_type,
                 link=link,
             )
             for admin_id in admin_ids

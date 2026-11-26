@@ -55,8 +55,8 @@ export default function StudentCoursesPage() {
       await queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });
       await queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
       toast.success(enrollment.status === "active"
-        ? "You are now enrolled in this course."
-        : "Course application added to your dashboard. Complete payment to unlock materials.");
+        ? "Your application was approved and you are enrolled."
+        : "Your application was sent to the admin team for review.");
     },
     onError: (error) => {
       const detail = error instanceof AxiosError
@@ -75,7 +75,9 @@ export default function StudentCoursesPage() {
   );
 
   const enrolledCourseIds = useMemo(
-    () => new Set(enrollments.map((e: any) => e.course_id || e.course?.id)),
+    () => new Set(enrollments
+      .filter((enrollment: any) => enrollment.status !== "rejected")
+      .map((e: any) => e.course_id || e.course?.id)),
     [enrollments]
   );
   const enrollmentByCourseId = useMemo(
@@ -188,11 +190,13 @@ export default function StudentCoursesPage() {
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-brand-50 text-brand-700"
                       }`}>
-                        {enrollmentByCourseId.get(course.id)?.status === "pending"
-                          ? "Applied"
-                          : enrolledCourseIds.has(course.id)
-                            ? "Enrolled"
-                            : "Open"}
+                        {enrollmentByCourseId.get(course.id)?.status === "application_pending"
+                          ? "Awaiting approval"
+                          : enrollmentByCourseId.get(course.id)?.status === "pending"
+                            ? "Awaiting payment"
+                            : enrolledCourseIds.has(course.id)
+                              ? "Enrolled"
+                              : "Open"}
                       </span>
                     </div>
                     <p className="text-sm text-slate-600 line-clamp-2">
@@ -208,11 +212,13 @@ export default function StudentCoursesPage() {
                         disabled={enrolledCourseIds.has(course.id)}
                         className="rounded-full border border-brand-200 px-3 py-1.5 text-xs font-semibold text-brand-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                       >
-                        {enrollmentByCourseId.get(course.id)?.status === "pending"
-                          ? "Applied"
-                          : enrolledCourseIds.has(course.id)
-                            ? "Enrolled"
-                          : "View & enroll"}
+                        {enrollmentByCourseId.get(course.id)?.status === "application_pending"
+                          ? "Awaiting approval"
+                          : enrollmentByCourseId.get(course.id)?.status === "pending"
+                            ? "Awaiting payment"
+                            : enrolledCourseIds.has(course.id)
+                              ? "Enrolled"
+                              : "View & enroll"}
                       </button>
                     </div>
                   </div>
@@ -265,11 +271,13 @@ export default function StudentCoursesPage() {
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-brand-50 text-brand-700"
                         }`}>
-                          {enrollmentByCourseId.get(course.id)?.status === "pending"
-                            ? "Applied"
-                            : isEnrolled
-                              ? "Enrolled"
-                              : "Open"}
+                          {enrollmentByCourseId.get(course.id)?.status === "application_pending"
+                            ? "Awaiting approval"
+                            : enrollmentByCourseId.get(course.id)?.status === "pending"
+                              ? "Awaiting payment"
+                              : isEnrolled
+                                ? "Enrolled"
+                                : "Open"}
                         </span>
                       </div>
                       <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
@@ -375,21 +383,25 @@ export default function StudentCoursesPage() {
                   <div>
                     <p className="font-semibold text-slate-950">
                       {enrolledCourseIds.has(selectedCourse.id)
-                        ? enrollmentByCourseId.get(selectedCourse.id)?.status === "pending"
-                          ? "Your course application is on the dashboard"
-                          : "You are enrolled in this course"
+                        ? enrollmentByCourseId.get(selectedCourse.id)?.status === "application_pending"
+                          ? "Your application is awaiting admin approval"
+                          : enrollmentByCourseId.get(selectedCourse.id)?.status === "pending"
+                            ? "Your approved application is awaiting payment"
+                            : "You are enrolled in this course"
                         : selectedCourse.price === 0
                           ? "Apply for this free course"
                           : `Apply for ${formatCurrency(selectedCourse.price)}`}
                     </p>
                     <p className="mt-1 text-xs text-slate-600">
                       {enrolledCourseIds.has(selectedCourse.id)
-                        ? enrollmentByCourseId.get(selectedCourse.id)?.status === "pending"
-                          ? "Complete payment from your dashboard to unlock the course materials."
-                          : "Open your course from My Courses to continue learning."
+                        ? enrollmentByCourseId.get(selectedCourse.id)?.status === "application_pending"
+                          ? "You will be able to continue from your dashboard after approval."
+                          : enrollmentByCourseId.get(selectedCourse.id)?.status === "pending"
+                            ? "Complete payment from your dashboard to unlock the course materials."
+                            : "Open your course from My Courses to continue learning."
                         : selectedCourse.price === 0
-                          ? "Your enrollment will be activated immediately."
-                          : "Apply now to add this course to your dashboard, then pay from your dashboard to unlock materials."}
+                          ? "Your application will be reviewed before enrollment is activated."
+                          : "Apply for review first. If approved, you can pay from your dashboard to unlock materials."}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
