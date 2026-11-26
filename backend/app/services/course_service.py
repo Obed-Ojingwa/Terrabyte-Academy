@@ -6,6 +6,7 @@ from sqlalchemy.orm import joinedload
 from fastapi import HTTPException
 from app.models.course import Course, Module, Lesson
 from app.models.enrollment import Enrollment
+from app.models.user import Role, User
 from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
 from app.core.cache import TTLCache
 
@@ -182,6 +183,16 @@ class CourseService:
     async def create_course(self, payload: CourseCreate, user) -> CourseResponse:
         if payload.start_date and payload.end_date and payload.end_date < payload.start_date:
             raise HTTPException(status_code=422, detail="End date must be on or after the start date")
+        if payload.tutor_id:
+            tutor = (
+                await self.db.execute(
+                    select(User)
+                    .join(User.role)
+                    .where(User.id == payload.tutor_id, Role.name == "tutor")
+                )
+            ).scalar_one_or_none()
+            if not tutor:
+                raise HTTPException(status_code=404, detail="Tutor not found")
         slug = slugify(payload.title)
         count = (await self.db.execute(select(func.count()).where(Course.slug.like(f"{slug}%")))).scalar()
         if count:
@@ -208,7 +219,15 @@ class CourseService:
         if user.role.name not in {"super_admin", "admin"}:
             if user.role.name != "tutor" or course.tutor_id != user.id:
                 raise HTTPException(status_code=403, detail="Not authorized")
-        for field, value in payload.model_dump(exclude_unset=True).items():
+        updates = payload.model_dump(exclude_unset=True)
+        if user.role.name == "tutor":
+            admin_only_fields = {"price", "mode", "category", "level", "is_published", "thumbnail_url", "tutor_id"}
+            if admin_only_fields.intersection(updates):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Only admins can change course pricing, publication, thumbnails, or tutor assignment",
+                )
+        for field, value in updates.items():
             setattr(course, field, value)
         start_date = payload.start_date if "start_date" in payload.model_fields_set else course.start_date
         end_date = payload.end_date if "end_date" in payload.model_fields_set else course.end_date

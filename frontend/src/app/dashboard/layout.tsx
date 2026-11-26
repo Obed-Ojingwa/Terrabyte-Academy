@@ -9,7 +9,7 @@ const roleRouteMap: Record<string, RegExp[]> = {
   student: [/^\/dashboard\/student(\/|$)/],
   tutor: [/^\/dashboard\/tutor(\/|$)/],
   admin: [/^\/dashboard\/admin(\/|$)/],
-  super_admin: [/^\/dashboard\/superadmin(\/|$)/, /^\/dashboard\/admin\/(payments|applications)$/],
+  super_admin: [/^\/dashboard\/superadmin(\/|$)/, /^\/dashboard\/admin\/(payments|applications|courses)(\/|$)/],
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

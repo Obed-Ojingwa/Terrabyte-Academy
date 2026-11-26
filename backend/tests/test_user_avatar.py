@@ -7,7 +7,7 @@ import pytest
 from fastapi import HTTPException
 from starlette.datastructures import Headers, UploadFile
 
-from app.api.v1 import users
+from app.api.v1 import storage, users
 
 
 class FakeDB:
@@ -25,9 +25,9 @@ class FakeDB:
         return None
 
 
-def make_upload(contents: bytes, content_type: str = "image/png") -> UploadFile:
+def make_upload(contents: bytes, content_type: str = "image/png", filename: str = "avatar.png") -> UploadFile:
     return UploadFile(
-        filename="avatar.png",
+        filename=filename,
         file=BytesIO(contents),
         headers=Headers({"content-type": content_type}),
     )
@@ -99,3 +99,53 @@ def test_student_avatar_upload_persists_storage_url(monkeypatch):
     assert uploaded["content_type"] == "image/png"
     assert db.added == [student]
     assert db.committed
+
+
+def test_course_thumbnail_upload_validates_image_and_uses_generated_key(monkeypatch):
+    uploaded = {}
+
+    class FakeStorage:
+        def upload_file(self, key, contents, content_type):
+            uploaded.update(key=key, contents=contents, content_type=content_type)
+
+        def get_public_url(self, key):
+            return f"https://cdn.example/{key}"
+
+    monkeypatch.setattr(storage, "StorageService", FakeStorage)
+    admin = SimpleNamespace(id=uuid4(), role=SimpleNamespace(name="admin"))
+    content = b"\x89PNG\r\n\x1a\nimage"
+
+    result = asyncio.run(
+        storage.upload_course_thumbnail(
+            make_upload(content, filename="../../unsafe.png"),
+            admin,
+        )
+    )
+
+    assert result["key"].startswith(f"course-thumbnails/{admin.id}/")
+    assert result["key"].endswith(".png")
+    assert "unsafe" not in result["key"]
+    assert result["url"] == f"https://cdn.example/{result['key']}"
+    assert uploaded == {
+        "key": result["key"],
+        "contents": content,
+        "content_type": "image/png",
+    }
+
+
+@pytest.mark.parametrize(
+    ("contents", "content_type", "expected_status"),
+    [
+        (b"not an image", "image/png", 415),
+        (b"\x89PNG\r\n\x1a\n" + b"x" * storage.MAX_COURSE_THUMBNAIL_SIZE, "image/png", 413),
+        (b"<svg></svg>", "image/svg+xml", 415),
+    ],
+    ids=["invalid-signature", "oversized-image", "svg-image"],
+)
+def test_course_thumbnail_upload_rejects_invalid_files(contents, content_type, expected_status):
+    admin = SimpleNamespace(id=uuid4(), role=SimpleNamespace(name="admin"))
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(storage.upload_course_thumbnail(make_upload(contents, content_type), admin))
+
+    assert error.value.status_code == expected_status

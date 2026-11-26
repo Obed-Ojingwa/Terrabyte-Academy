@@ -1,3 +1,4 @@
+from uuid import uuid4
 import mimetypes
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -7,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_admin
 from app.database import get_db
 from app.models.course import Lesson, Material
 from app.services.course_access_service import require_course_access
@@ -15,6 +16,15 @@ from app.services.storage_service import StorageService
 
 router = APIRouter(prefix="/storage", tags=["Storage"])
 optional_bearer = HTTPBearer(auto_error=False)
+MAX_COURSE_THUMBNAIL_SIZE = 5 * 1024 * 1024
+COURSE_THUMBNAIL_FORMATS = {
+    "image/jpeg": (".jpg", lambda content: content.startswith(b"\xff\xd8\xff")),
+    "image/png": (".png", lambda content: content.startswith(b"\x89PNG\r\n\x1a\n")),
+    "image/webp": (
+        ".webp",
+        lambda content: len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP",
+    ),
+}
 
 
 @router.post("/upload")
@@ -33,6 +43,35 @@ async def upload_file(
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Unable to upload file") from exc
     return {"key": key, "url": storage.get_public_url(key)}
+
+
+@router.post("/course-thumbnail")
+async def upload_course_thumbnail(
+    file: UploadFile = File(...),
+    current_user=Depends(require_admin),
+):
+    content_type = (file.content_type or "").lower()
+    image_format = COURSE_THUMBNAIL_FORMATS.get(content_type)
+    if image_format is None:
+        raise HTTPException(status_code=415, detail="Course thumbnails must be JPEG, PNG, or WebP images")
+
+    contents = await file.read(MAX_COURSE_THUMBNAIL_SIZE + 1)
+    if len(contents) > MAX_COURSE_THUMBNAIL_SIZE:
+        raise HTTPException(status_code=413, detail="Course thumbnails must be 5 MB or smaller")
+    if not contents or not image_format[1](contents):
+        raise HTTPException(status_code=415, detail="The uploaded file does not match its image type")
+
+    key = f"course-thumbnails/{current_user.id}/{uuid4().hex}{image_format[0]}"
+    try:
+        storage = StorageService()
+        storage.upload_file(key, contents, content_type)
+        url = storage.get_public_url(key)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unable to upload course thumbnail") from exc
+
+    return {"key": key, "url": url}
 
 
 @router.get("/{storage_key:path}")

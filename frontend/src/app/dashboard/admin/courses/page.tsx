@@ -26,6 +26,7 @@ type AdminCourse = {
   course_outline?: { title: string; topics: string[] }[];
   tutor?: { id?: string };
   is_published?: boolean;
+  thumbnail_url?: string | null;
 };
 
 type CourseFormState = {
@@ -201,6 +202,7 @@ export default function AdminCoursesPage() {
       tutor_id: String(course.tutor?.id ?? ""),
       is_published: Boolean(course.is_published),
     });
+    setThumbnailUrl(course.thumbnail_url ?? "");
   };
 
   const selectCourse = (course: AdminCourse) => {
@@ -277,13 +279,13 @@ export default function AdminCoursesPage() {
             </label>
           </div>
           <div className="mt-4">
-            <MediaUploader label="Course thumbnail" accept="image/*" onUploaded={(url) => setThumbnailUrl(url)} />
+            <MediaUploader label="Course thumbnail" accept="image/jpeg,image/png,image/webp" uploadUrl="/storage/course-thumbnail" previewUrl={thumbnailUrl} onUploaded={(url) => setThumbnailUrl(url)} />
           </div>
           <div className="mt-5 flex gap-3">
             <button type="submit" className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">
               <Plus size={16} /> {editingId ? "Save changes" : "Create course"}
             </button>
-            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm()); }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700">Cancel</button>}
+            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm()); setThumbnailUrl(""); }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-700">Cancel</button>}
           </div>
         </form>
 

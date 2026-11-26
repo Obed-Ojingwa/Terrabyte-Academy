@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 
@@ -9,12 +9,17 @@ interface Props {
   accept?: string;
   uploadUrl?: string;
   extraFormFields?: Record<string, string>;
+  previewUrl?: string | null;
   onUploaded?: (url: string, key: string) => void;
 }
 
-export default function MediaUploader({ label, accept = "image/*", uploadUrl = "/storage/upload", extraFormFields = {}, onUploaded }: Props) {
+export default function MediaUploader({ label, accept = "image/*", uploadUrl = "/storage/upload", extraFormFields = {}, previewUrl, onUploaded }: Props) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPreview(previewUrl ?? null);
+  }, [previewUrl]);
 
   const handleChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
